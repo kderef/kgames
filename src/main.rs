@@ -1,6 +1,10 @@
-use macroquad::{miniquad::conf::Platform, prelude::Conf};
+use game::Game;
+use macroquad::prelude::*;
+use menu::Menu;
+use miniquad::conf::Platform;
 
 mod game;
+mod games;
 mod menu;
 
 fn window() -> Conf {
@@ -19,5 +23,13 @@ fn window() -> Conf {
 
 #[macroquad::main(window)]
 async fn main() {
-    println!("Hello, world!");
+    let mut menu = Menu::new();
+
+    loop {
+        menu.update();
+        menu.draw();
+        #[cfg(debug_assertions)]
+        draw_text(&format!("FPS: {}", get_fps()), 0., 20., 20., GREEN);
+        next_frame().await;
+    }
 }
