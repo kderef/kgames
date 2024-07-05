@@ -1,4 +1,5 @@
-use game::Game;
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 use macroquad::prelude::*;
 use menu::Menu;
 use miniquad::conf::Platform;
