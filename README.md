@@ -6,8 +6,8 @@ Spritual successor to [Multisim](https://github.com/kderef/multisim).
 - [x] **0.1.0**: Basic Menu working
 - [ ] **0.1.1**: Breakout fully working
 - [ ] **0.1.2**: Pong fully working
-...  
+...<br/><br/>
 - [ ] **0.2.0**: Ability to switch games
-...  
+...<br/><br/>
 - [ ] **0.3.0**: Add audio to every game
 ... TODO
