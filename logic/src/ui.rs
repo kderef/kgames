@@ -1,5 +1,6 @@
-use macroquad::prelude::*;
+use crate::wrap::{ctx::Context, prelude::*};
 
+#[allow(dead_code)]
 pub trait ExtendedDraw {
     type ExtParams;
     fn draw(&self, color: Color);
@@ -19,15 +20,14 @@ impl ExtendedDraw for Rect {
     }
 }
 
-
-pub fn button(text: &str, bounds: Rect, font_size: f32) -> bool {
+pub fn button(text: &str, bounds: Rect, font_size: f32, ctx: &dyn Context) -> bool {
     const BG: Color = Color::new(0., 0., 0., 0.3);
     const BG_HOVER: Color = Color::new(0., 0., 0., 0.5);
     const BG_CLICK: Color = Color::new(0., 0., 0., 0.0);
 
-    let mouse_pos: Vec2 = mouse_position().into();
+    let mouse_pos: Vec2 = ctx.mouse_position().into();
     let mouse_hovered = bounds.contains(mouse_pos);
-    let button_clicked = mouse_hovered && is_mouse_button_pressed(MouseButton::Left);
+    let button_clicked = mouse_hovered && ctx.is_mouse_button_pressed(MouseButton::Left);
 
     let color = if button_clicked {
         BG_CLICK
@@ -36,10 +36,10 @@ pub fn button(text: &str, bounds: Rect, font_size: f32) -> bool {
     } else {
         BG
     };
-    bounds.draw(color);
+    ctx.draw_rectangle(bounds.x, bounds.y, bounds.w, bounds.h, color);
 
     let center = bounds.center();
-    let text_size = measure_text(text, None, font_size as u16, 1.0);
+    let text_size = ctx.measure_text(text, None, font_size as u16, 1.0);
     let text_x = center.x - text_size.width / 2.0;
     let text_y = center.y + text_size.height / 3.0;
 

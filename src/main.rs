@@ -1,13 +1,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use macroquad::prelude::*;
-use menu::Menu;
+use logic::menu::Menu;
 use miniquad::conf::Platform;
 
-mod game;
-mod games;
-mod menu;
-mod ui;
+#[cfg(debug_assertions)]
+mod hotreload;
 
 fn window() -> Conf {
     Conf {
@@ -23,6 +21,28 @@ fn window() -> Conf {
     }
 }
 
+#[cfg(debug_assertions)]
+#[macroquad::main(window)]
+async fn main() {
+    use logic::wrap::{ctx::Context, ctx_impl::DrawerImpl, MACROQUAD_CTX};
+    dbg!();
+
+    let lib = hotreload::load_library();
+    let hotreloader = hotreload::HotReloader::new(&lib);
+    let drawer: Box<dyn Context> = Box::new(DrawerImpl {});
+    hotreloader.set_ctx(&drawer);
+
+    let mut menu = Menu::new();
+
+    loop {
+        hotreloader.update(&mut menu);
+        hotreloader.draw(&mut menu);
+        draw_text(&format!("FPS: {}", get_fps()), 0., 20., 20., GREEN);
+        next_frame().await;
+    }
+}
+
+#[cfg(not(debug_assertions))]
 #[macroquad::main(window)]
 async fn main() {
     let mut menu = Menu::new();
@@ -30,8 +50,6 @@ async fn main() {
     loop {
         menu.update();
         menu.draw();
-        #[cfg(debug_assertions)]
-        draw_text(&format!("FPS: {}", get_fps()), 0., 20., 20., GREEN);
         next_frame().await;
     }
 }

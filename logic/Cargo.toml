@@ -1,0 +1,17 @@
+[package]
+name = "logic"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+lto = true
+strip = true
+debug = false
+codegen-units = 1
+opt-level = "z" # "s"
+
+[lib]
+crate-type = ["rlib", "dylib"]
+
+[dependencies]
+macroquad = {version = "0.4.8"} # features=["audio"]

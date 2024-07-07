@@ -1,9 +1,8 @@
 use crate::{
     game::Game,
-    games::{ball::Ball, breakout::bricks::Brick}, ui::{self, ExtendedDraw},
+    games::{ball::Ball, breakout::bricks::Brick}, ui::{self, ExtendedDraw}, wrap::{ctx::Context, screen},
 };
-use macroquad::prelude::*;
-
+use crate::wrap::prelude::*;
 use super::bricks::Bricks;
 
 pub struct Breakout {
@@ -43,18 +42,18 @@ impl Breakout {
         col_x && col_y
     }
 
-    fn draw_game_over(&mut self) {
+    fn draw_game_over(&mut self, ctx: &dyn Context) {
         const OVERLAY: Color = Color::new(0.0, 0.0, 0.0, 0.5);
-        let screen = Rect::new(0.0, 0.0, screen_width(), screen_height());
-        screen.draw(OVERLAY);
+        let screen = Rect::new(0.0, 0.0, ctx.screen_width(), ctx.screen_height());
+        ctx.draw_rectangle(screen.x, screen.y, screen.w, screen.h, OVERLAY);
 
         // Draw the title
         let center = screen.center();
 
         let gameover_text = "Game Over!";
         let gameover_ftsz = (screen.w / 8.0).clamp(40.0, 100.0);
-        let gameover_dims = measure_text(gameover_text, None, gameover_ftsz as u16, 1.0);
-        draw_text(
+        let gameover_dims = ctx.measure_text(gameover_text, None, gameover_ftsz as u16, 1.0);
+        ctx.draw_text(
             gameover_text,
             center.x - gameover_dims.width / 2.0,
             center.y - gameover_ftsz,
@@ -65,9 +64,9 @@ impl Breakout {
         let bricks_left = self.bricks.bricks.iter().flatten().map(|b| b.alive()).count();
         let subtext = format!("Bricks left: {bricks_left}");
         let subtext_ftsz = gameover_ftsz / 2.0;
-        let subtext_dims = measure_text(&subtext, None, subtext_ftsz as u16, 1.0);
+        let subtext_dims = ctx.measure_text(&subtext, None, subtext_ftsz as u16, 1.0);
         let subtext_y = center.y - gameover_ftsz + subtext_ftsz;
-        draw_text(
+        ctx.draw_text(
             &subtext, center.x - subtext_dims.width / 2.0,
             subtext_y,
             subtext_ftsz, LIGHTGRAY
@@ -87,11 +86,11 @@ impl Breakout {
             w: button_width,
             h: button_height
         };
-        if ui::button("Play Again", bounds, button_ftsz) {
-            self.reset();
+        if ui::button("Play Again", bounds, button_ftsz, ctx) {
+            self.reset(ctx);
         }
         bounds.y += button_height + SPACING;
-        if ui::button("Exit To Menu", bounds, button_ftsz) {
+        if ui::button("Exit To Menu", bounds, button_ftsz, ctx) {
             self.exit = true;
         }
     }
@@ -101,9 +100,13 @@ impl Game for Breakout {
     fn requested_exit(&self) -> bool {
         self.exit
     }
-    fn init() -> Self {
+    fn init(ctx: &dyn Context) -> Self {
+        dbg!();
+        let ad = screen().as_ref();
+        println!("{:p}", ad);
+
         Self {
-            icon: Texture2D::empty(),
+            icon: texture_empty(),
             ball: Ball::new(screen_width() / 2.0, screen_height() - Self::PADDLE_HEIGHT - 10.0, 100.0, -100.0),
             paddle: Rect::new(
                 screen_width() / 2.0 - Self::PADDLE_WIDTH / 2.0,
@@ -121,7 +124,7 @@ impl Game for Breakout {
         "Breakout"
     }
 
-    fn reset(&mut self) {
+    fn reset(&mut self, ctx: &dyn Context) {
         self.ball = Ball::new(screen_width() / 2.0, screen_height() / 2.0, 100.0, 100.0);
         self.paddle = Rect::new(
             screen_width() / 2.0 - Self::PADDLE_WIDTH / 2.0,
@@ -134,7 +137,7 @@ impl Game for Breakout {
         self.exit = false;
     }
 
-    fn draw(&mut self) {
+    fn draw(&mut self, ctx: &dyn Context) {
         const BG: Color = Color::new(0.2, 0.2, 0.2, 1.0);
         const PADDLE: Color = Color::new(0.9, 0.9, 0.9, 1.0);
 
@@ -154,7 +157,7 @@ impl Game for Breakout {
             let mut x = Brick::SPACING;
             for col in 0..cols {
                 if !self.bricks.bricks[row][col].destroyed() {
-                    draw_rectangle(x, y, brick_width, Brick::HEIGHT, RED);
+                    ctx.draw_rectangle(x, y, brick_width, Brick::HEIGHT, RED);
                 }
                 x += brick_width + Brick::SPACING;
             }
@@ -162,13 +165,13 @@ impl Game for Breakout {
         }
 
         if self.gameover {
-            self.draw_game_over();
+            self.draw_game_over(ctx);
         }
     }
 
-    fn update(&mut self) {
+    fn update(&mut self, ctx: &dyn Context) {
         let screen: Vec2 = (screen_width(), screen_height()).into();
-        let dt = get_frame_time();
+        let dt = ctx.get_frame_time();
 
         if self.gameover {
             self.paddle.y = screen.y - Self::PADDLE_HEIGHT - 2.0;

@@ -1,15 +1,14 @@
 use macroquad::prelude::*;
 
+use crate::wrap::ctx::Context;
+
 pub trait Game {
     fn title(&self) -> &str;
     fn icon(&self) -> Option<&Texture2D> { None }
-    fn init() -> Self where Self: Sized;
-    fn update(&mut self) {}
-    fn reset(&mut self) {}
-    fn draw(&mut self) {
-        clear_background(PURPLE);
-        draw_text("DRAW NOT IMPLEMENTED", 100.0, 100.0, 100.0, WHITE);
-    }
+    fn init(ctx: &dyn Context) -> Self where Self: Sized;
+    fn update(&mut self, ctx: &dyn Context) {}
+    fn reset(&mut self, ctx: &dyn Context) {}
+    fn draw(&mut self, ctx: &dyn Context) {}
     fn requested_exit(&self) -> bool {false}
 }
 
@@ -30,7 +29,7 @@ macro_rules! game_objects {
     ($($t:tt),* $(,)*) => {
         [
             $(
-                Box::new($t::init()),
+                Box::new($t::init(), &ctx),
             )*
         ]
     };

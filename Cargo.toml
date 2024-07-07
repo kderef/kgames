@@ -12,6 +12,12 @@ codegen-units = 1
 opt-level = "z" # "s"
 
 [dependencies]
-macroquad = {version = "0.4.8", features = ["audio"]}
+macroquad = {version = "0.4.8"} # features=["audio"]
+logic = { path = "logic" }
+
+[target.'cfg(debug_assertions)'.dependencies]
+notify = "5.0"
+libloading = "0.7"
+
 [build-dependencies]
 static_vcruntime = "2.0.0"

@@ -1,5 +1,6 @@
-use macroquad::prelude::*;
+use crate::wrap::prelude::*;
 
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Ball<const R: usize> {
     pub pos: Vec2,
     pub vel: Vec2,

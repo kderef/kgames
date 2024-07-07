@@ -1,14 +1,61 @@
 use crate::{
     game::Game,
     game_objects,
-    games::{self, breakout::Breakout, pong::Pong},
+    games::{self, breakout::Breakout, pong::Pong}, wrap::{ctx::Context, screen},
 };
 use macroquad::prelude::*;
 
+#[repr(C)]
 pub struct Menu {
     games: [Box<dyn Game>; 2],
     selected: Option<usize>,
     scroll: f32,
+}
+
+#[no_mangle]
+pub extern "C" fn menu_update(menu: &mut Menu, ctx: &dyn Context) {
+    if let Some(game) = menu.selected {
+        menu.games[game].update();
+        return;
+    }
+    let (_scroll_x, scroll_y) = mouse_wheel();
+    let scroll_y = scroll_y.min(1.0);
+    menu.scroll += scroll_y;
+}
+
+#[no_mangle]
+pub extern "C" fn menu_draw(menu: &mut Menu, ctx: &dyn Context) {
+    if let Some(game) = menu.selected {
+        let g = &mut menu.games[game];
+        g.draw();
+        if g.requested_exit() {
+            g.reset();
+            menu.selected = None;
+        }
+        return;
+    }
+
+    const BG: Color = Color::new(0.11, 0.12, 0.12, 1.0);
+    clear_background(BG);
+
+    // Draw the Title
+    let (sw, sh) = (screen_width(), screen_height());
+    let title = "KGames";
+    let title_size = (sw / 10.).clamp(60.0, sw);
+    let title_dims = measure_text(title, None, title_size as u16, 1.0);
+    draw_text(
+        title,
+        sw / 2. - title_dims.width / 2.,
+        title_size,
+        title_size,
+        WHITE,
+    );
+
+    // Draw All the games.
+    menu.draw_games(title_size + 20.0);
+
+    // Draw small subtext
+    draw_text(concat!("v", env!("CARGO_PKG_VERSION")), 0.0, sh - 5.0, 15.0, GRAY);
 }
 
 impl Menu {
@@ -23,47 +70,13 @@ impl Menu {
             scroll: 0.0,
         }
     }
+    #[inline]
     pub fn update(&mut self) {
-        if let Some(game) = self.selected {
-            self.games[game].update();
-            return;
-        }
-        let (_scroll_x, scroll_y) = mouse_wheel();
-        let scroll_y = scroll_y.min(1.0);
-        self.scroll += scroll_y;
+        menu_update(self);
     }
+    #[inline]
     pub fn draw(&mut self) {
-        if let Some(game) = self.selected {
-            let g = &mut self.games[game];
-            g.draw();
-            if g.requested_exit() {
-                g.reset();
-                self.selected = None;
-            }
-            return;
-        }
-
-        const BG: Color = Color::new(0.11, 0.12, 0.12, 1.0);
-        clear_background(BG);
-
-        // Draw the Title
-        let (sw, sh) = (screen_width(), screen_height());
-        let title = "KGames";
-        let title_size = (sw / 10.).clamp(60.0, sw);
-        let title_dims = measure_text(title, None, title_size as u16, 1.0);
-        draw_text(
-            title,
-            sw / 2. - title_dims.width / 2.,
-            title_size,
-            title_size,
-            WHITE,
-        );
-
-        // Draw All the games.
-        self.draw_games(title_size + 20.0);
-
-        // Draw small subtext
-        draw_text(concat!("v", env!("CARGO_PKG_VERSION")), 0.0, sh - 5.0, 15.0, GRAY);
+        menu_draw(self);
     }
 
     /// Draw the game with an icon in 2:1 aspect.
@@ -109,7 +122,7 @@ impl Menu {
         bounds.contains(mouse_pos) && is_mouse_button_pressed(MouseButton::Left)
     }
     fn draw_games(&mut self, from_y: f32) {
-        let (sw, sh) = (screen_width(), screen_height());
+        let (sw, _sh) = (screen_width(), screen_height());
         let mouse_pos: Vec2 = mouse_position().into();
 
         let spacing = 10.0;
