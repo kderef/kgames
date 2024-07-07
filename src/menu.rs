@@ -6,8 +6,9 @@ use crate::{
 use macroquad::prelude::*;
 
 pub struct Menu {
-    games: Vec<Box<dyn Game>>,
+    games: [Box<dyn Game>; 2],
     selected: Option<usize>,
+    scroll: f32,
 }
 
 impl Menu {
@@ -15,20 +16,30 @@ impl Menu {
 
     pub fn new() -> Self {
         Self {
-            games: game_objects! {
+            games: game_objects! [
                 Breakout, Pong,
-            },
+            ],
             selected: None,
+            scroll: 0.0,
         }
     }
     pub fn update(&mut self) {
         if let Some(game) = self.selected {
             self.games[game].update();
+            return;
         }
+        let (_scroll_x, scroll_y) = mouse_wheel();
+        let scroll_y = scroll_y.min(1.0);
+        self.scroll += scroll_y;
     }
     pub fn draw(&mut self) {
         if let Some(game) = self.selected {
-            self.games[game].draw();
+            let g = &mut self.games[game];
+            g.draw();
+            if g.requested_exit() {
+                g.reset();
+                self.selected = None;
+            }
             return;
         }
 
@@ -50,7 +61,11 @@ impl Menu {
 
         // Draw All the games.
         self.draw_games(title_size + 20.0);
+
+        // Draw small subtext
+        draw_text(concat!("v", env!("CARGO_PKG_VERSION")), 0.0, sh - 5.0, 15.0, GRAY);
     }
+
     /// Draw the game with an icon in 2:1 aspect.
     /// Returns if the game was clicked
     fn draw_game(&self, bounds: Rect, g: &Box<dyn Game>, mouse_pos: Vec2) -> bool {
@@ -100,7 +115,7 @@ impl Menu {
         let spacing = 10.0;
         let games_x = 4;
 
-        let game_w = (sw - (spacing * (games_x as f32 + 1.0))) / games_x as f32;
+        let game_w = (sw - (spacing * (games_x + 1) as f32)) / games_x as f32;
         let mut game_bounds = Rect::new(
             spacing,
             spacing + from_y,
@@ -108,14 +123,17 @@ impl Menu {
             game_w / 2.0 + Self::GAME_TITLE_SIZE,
         );
 
+        let game_dx = spacing + game_bounds.w;
+        let game_dy = spacing + game_bounds.h;
+        // Draw thumbnails
         for (i, game) in self.games.iter().enumerate() {
             if self.draw_game(game_bounds, game, mouse_pos) {
                 self.selected = Some(i);
             }
-            game_bounds.x += spacing + game_bounds.w;
+            game_bounds.x += game_dx;
             if (i + 1) % games_x == 0 {
                 game_bounds.x = spacing;
-                game_bounds.y += game_bounds.h + spacing;
+                game_bounds.y += game_dy;
             }
         }
     }

@@ -35,7 +35,7 @@ impl Game for Pong {
     fn title(&self) -> &'static str {
         "Pong"
     }
-    fn draw(&self) {
+    fn draw(&mut self) {
         
     }
     fn update(&mut self) {

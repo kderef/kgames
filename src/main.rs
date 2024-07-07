@@ -7,6 +7,7 @@ use miniquad::conf::Platform;
 mod game;
 mod games;
 mod menu;
+mod ui;
 
 fn window() -> Conf {
     Conf {
