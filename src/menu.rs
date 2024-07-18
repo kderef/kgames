@@ -23,6 +23,7 @@ impl Menu {
             scroll: 0.0,
         }
     }
+    #[inline]
     pub fn update(&mut self) {
         if let Some(game) = self.selected {
             self.games[game].update();
@@ -32,6 +33,7 @@ impl Menu {
         let scroll_y = scroll_y.min(1.0);
         self.scroll += scroll_y;
     }
+    #[inline]
     pub fn draw(&mut self) {
         if let Some(game) = self.selected {
             let g = &mut self.games[game];

@@ -1,6 +1,26 @@
 use crate::game::Game;
 use macroquad::prelude::*;
 
+fn pong_icon() -> RenderTarget {
+    let (w, h) = (500.0, 250.0);
+    let target = render_target(w as u32, h as u32);
+
+    let camera = Camera2D {
+        render_target: Some(target),
+        target: vec2(w / 2., h / 2.),
+        zoom: vec2(1. / w, 1. / h),
+        ..Default::default()
+    };
+    set_camera(&camera);
+
+    clear_background(BLACK);
+    draw_circle(w / 2.0, h / 2.0, 50.0, WHITE);
+
+    set_default_camera();
+
+    camera.render_target.unwrap()
+}
+
 pub struct Pong {
     icon: RenderTarget
 }
@@ -8,25 +28,7 @@ pub struct Pong {
 impl Game for Pong {
     fn init() -> Self {
         Self {
-            icon: {
-                let (w, h) = (500.0, 250.0);
-                let target = render_target(w as u32, h as u32);
-
-                let camera = Camera2D {
-                    render_target: Some(target),
-                    target: vec2(w / 2., h / 2.),
-                    zoom: vec2(1. / w, 1. / h),
-                    ..Default::default()
-                };
-                set_camera(&camera);
-
-                clear_background(BLACK);
-                draw_circle(w / 2.0, h / 2.0, 50.0, WHITE);
-
-                set_default_camera();
-
-                camera.render_target.unwrap()
-            }
+            icon: pong_icon(),
         }
     }
     fn icon(&self) -> Option<&Texture2D> {

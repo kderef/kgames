@@ -13,5 +13,6 @@ opt-level = "z" # "s"
 
 [dependencies]
 macroquad = {version = "0.4.8", features = ["audio"]}
+
 [build-dependencies]
 static_vcruntime = "2.0.0"
