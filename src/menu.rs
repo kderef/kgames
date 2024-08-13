@@ -1,12 +1,12 @@
 use crate::{
     game::Game,
     game_objects,
-    games::{self, breakout::Breakout, pong::Pong},
+    games::{self, breakout::Breakout, dvd::DvD, game_of_life::GameOfLife, pong::Pong},
 };
 use macroquad::prelude::*;
 
 pub struct Menu {
-    games: [Box<dyn Game>; 2],
+    games: [Box<dyn Game>; 4],
     selected: Option<usize>,
     scroll: f32,
 }
@@ -16,9 +16,7 @@ impl Menu {
 
     pub fn new() -> Self {
         Self {
-            games: game_objects! [
-                Breakout, Pong,
-            ],
+            games: game_objects![Breakout, Pong, GameOfLife, DvD],
             selected: None,
             scroll: 0.0,
         }
@@ -26,7 +24,7 @@ impl Menu {
     #[inline]
     pub fn update(&mut self) {
         if let Some(game) = self.selected {
-            self.games[game].update();
+            self.game(game).update();
             return;
         }
         let (_scroll_x, scroll_y) = mouse_wheel();
@@ -34,9 +32,18 @@ impl Menu {
         self.scroll += scroll_y;
     }
     #[inline]
+    fn game(&mut self, idx: usize) -> &mut Box<dyn Game> {
+        #[cfg(not(debug_assertions))]
+        unsafe {
+            &mut self.games.get_unchecked(idx)
+        }
+        #[cfg(debug_assertions)]
+        &mut self.games[idx]
+    }
+    #[inline]
     pub fn draw(&mut self) {
         if let Some(game) = self.selected {
-            let g = &mut self.games[game];
+            let g = &mut self.game(game);
             g.draw();
             if g.requested_exit() {
                 g.reset();
@@ -65,7 +72,13 @@ impl Menu {
         self.draw_games(title_size + 20.0);
 
         // Draw small subtext
-        draw_text(concat!("v", env!("CARGO_PKG_VERSION")), 0.0, sh - 5.0, 15.0, GRAY);
+        draw_text(
+            concat!("v", env!("CARGO_PKG_VERSION")),
+            0.0,
+            sh - 5.0,
+            15.0,
+            GRAY,
+        );
     }
 
     /// Draw the game with an icon in 2:1 aspect.
