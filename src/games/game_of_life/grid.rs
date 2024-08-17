@@ -4,14 +4,13 @@ use macroquad::rand;
 
 use super::cell::Cell;
 
-const SCALE: usize = 14;
-
 pub struct Grid {
-    cells: Vec<Cell>,
-    scratch: Vec<Cell>,
-    width: usize,
-    height: usize,
-    size: usize,
+    pub cells: Vec<Cell>,
+    pub scratch: Vec<Cell>,
+    pub width: usize,
+    pub height: usize,
+    pub size: usize,
+    pub scale: usize,
 }
 
 impl Grid {
@@ -23,6 +22,7 @@ impl Grid {
             width,
             height,
             size,
+            scale: 14,
         }
     }
     pub fn fill(&mut self, with: Cell) {
@@ -44,8 +44,8 @@ impl Grid {
             return;
         }
 
-        let to_width = (new_w + SCALE - 1) / SCALE * SCALE;
-        let to_height = (new_h + SCALE - 1) / SCALE * SCALE;
+        let to_width = (new_w + self.scale - 1) / self.scale * self.scale;
+        let to_height = (new_h + self.scale - 1) / self.scale * self.scale;
         let to_size = to_width * to_height;
 
         self.scratch.resize(to_size, Cell(false));

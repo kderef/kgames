@@ -33,7 +33,7 @@ fn window() -> Conf {
         #[cfg(target_os = "macos")]
         icon: None,
         #[cfg(not(target_os = "macos"))]
-        icon: Some(window_icon),
+        icon: Some(window_icon()),
 
         platform: Platform::default(),
     }

@@ -19,7 +19,10 @@ impl Game for DvD {
         "DvD bouncy"
     }
     fn icon(&self) -> Option<&Texture2D> {
-        None
+        // let (w, h) = (800, 400);
+        // TODO: make prettier
+
+        Some(&self.logo)
     }
     fn init() -> Self
     where
@@ -65,13 +68,13 @@ impl Game for DvD {
         let screen_size = vec2(screen_width(), screen_height());
         let (screen_w, screen_h) = screen_size.into();
 
+        if self.paused {
+            return; // Do not update position
+        }
+
         self.passed_time += dt;
         if self.passed_time > 36. {
             self.passed_time = 0.;
-        }
-
-        if self.paused {
-            return; // Do not update position
         }
 
         // TODO: DvD clips into sides
@@ -89,6 +92,8 @@ impl Game for DvD {
         *self = Self::init();
     }
     fn draw(&mut self) {
+        let (sw, sh) = (screen_width(), screen_height());
+
         let tint = if self.rainbow {
             let v = self.passed_time / 36.;
             if self.inverted {
@@ -107,7 +112,17 @@ impl Game for DvD {
         clear_background(if self.inverted { BLACK } else { WHITE });
 
         if self.paused {
-            // TODO: draw paused text
+            let text = "[ Space to unpause ]";
+            let text_size = (sw / 15.) as u16;
+            let text_dims = measure_text(text, None, text_size, 1.);
+
+            draw_text(
+                text,
+                sw / 2. - text_dims.width / 2.,
+                sh - text_dims.height,
+                text_size as f32,
+                DARKGRAY,
+            );
         }
 
         draw_texture(&self.logo, self.pos.x, self.pos.y, tint);

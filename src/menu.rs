@@ -21,6 +21,7 @@ impl Menu {
             scroll: 0.0,
         }
     }
+
     #[inline]
     pub fn update(&mut self) {
         if let Some(game) = self.selected {
@@ -31,6 +32,7 @@ impl Menu {
         let scroll_y = scroll_y.min(1.0);
         self.scroll += scroll_y;
     }
+
     #[inline]
     fn game(&mut self, idx: usize) -> &mut Box<dyn Game> {
         #[cfg(not(debug_assertions))]
@@ -40,6 +42,7 @@ impl Menu {
         #[cfg(debug_assertions)]
         &mut self.games[idx]
     }
+
     #[inline]
     pub fn draw(&mut self) {
         if let Some(game) = self.selected {
@@ -86,7 +89,7 @@ impl Menu {
     fn draw_game(&self, bounds: Rect, g: &Box<dyn Game>, mouse_pos: Vec2) -> bool {
         const BG: Color = Color::new(0.1, 0.1, 0.1, 1.0);
         const BORDER: Color = Color::new(0.92, 0.85, 0.86, 1.0);
-        const BORDER_THICK: f32 = 1.0;
+        const BORDER_THICK: f32 = 2.0;
         const TITLE_BG: Color = Color::new(0.05, 0.05, 0.05, 1.0);
 
         let (x, y, w, h) = (bounds.x, bounds.y, bounds.w, bounds.h);
