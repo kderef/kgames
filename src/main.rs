@@ -3,10 +3,11 @@
 use macroquad::prelude::*;
 use menu::Menu;
 use miniquad::conf::{Icon, Platform};
+use script::Engine;
 
-mod game;
-mod games;
+mod ffi;
 mod menu;
+mod script;
 mod ui;
 
 #[cfg(not(target_os = "macos"))]
@@ -27,7 +28,7 @@ fn window() -> Conf {
         window_height: 600,
         high_dpi: true,
         fullscreen: false,
-        sample_count: 1,
+        sample_count: 4,
         window_resizable: true,
         // Window icon
         #[cfg(target_os = "macos")]
@@ -42,12 +43,16 @@ fn window() -> Conf {
 #[macroquad::main(window)]
 async fn main() {
     let mut menu = Menu::new();
+    let mut show_fps = false;
+    let mut script_engine = Engine::new();
 
     loop {
+        show_fps |= is_key_pressed(KeyCode::F5);
+
         menu.update();
         menu.draw();
-        #[cfg(debug_assertions)]
-        {
+
+        if show_fps {
             let fps = get_fps();
             let color = if fps >= 50 {
                 GREEN
