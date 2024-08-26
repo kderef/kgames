@@ -17,8 +17,10 @@ opt-level = "z" # "s"
 panic = "abort"
 
 [dependencies]
+anyhow = "1.0.86"
 macroquad = {version = "0.4.8", features = ["audio"]}
-rhai = "1.19.0"
+msgbox = "0.7.0"
+rhai = {version = "1.19.0", features = ["sync"]}
 
 [build-dependencies]
 static_vcruntime = "2.0.0"

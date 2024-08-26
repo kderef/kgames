@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use macroquad::prelude::*;
 
 pub trait ExtendedDraw {
@@ -14,11 +16,9 @@ impl ExtendedDraw for Rect {
     }
     #[inline(always)]
     fn draw_ex(&self, params: Self::ExtParams) {
-        draw_rectangle_ex(
-            self.x, self.y, self.w, self.h, params);
+        draw_rectangle_ex(self.x, self.y, self.w, self.h, params);
     }
 }
-
 
 pub fn button(text: &str, bounds: Rect, font_size: f32) -> bool {
     const BG: Color = Color::new(0., 0., 0., 0.3);
@@ -46,4 +46,22 @@ pub fn button(text: &str, bounds: Rect, font_size: f32) -> bool {
     draw_text(text, text_x, text_y, font_size, WHITE);
 
     button_clicked
+}
+
+pub struct Logger {
+    pub enabled: bool,
+}
+
+impl Logger {
+    pub fn new(enabled: bool) -> Self {
+        Self { enabled }
+    }
+    pub fn log(&self, text: impl Display) {
+        if !self.enabled {
+            return;
+        }
+
+        // Log the information
+        println!("LOGGER: {text}")
+    }
 }
