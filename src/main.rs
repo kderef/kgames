@@ -1,21 +1,15 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{
-    cell::OnceCell,
-    process::{self, ExitCode},
-    sync::{atomic::AtomicBool, mpsc},
-    thread,
-};
+use std::process;
 
+use error::ErrorPage;
 use macroquad::prelude::*;
 use menu::Menu;
-use miniquad::{
-    conf::{Icon, Platform},
-    window::blocking_event_loop,
-};
-use script::{Engine, Message};
+use miniquad::conf::{Icon, Platform};
+use script::Engine;
 use ui::Logger;
 
+mod error;
 mod ffi;
 mod menu;
 mod script;
@@ -54,9 +48,6 @@ fn window() -> Conf {
 #[macroquad::main(window)]
 async fn main() {
     let mut logger = Logger::new(true);
-
-    let mut menu = Menu::new();
-    let mut show_fps = false;
     let mut script_engine = Engine::new();
 
     logger.log("UI and scripting engine initialized");
@@ -70,48 +61,27 @@ async fn main() {
         script_engine.global_dir
     ));
 
+    let mut start_error = None;
+    let mut errors = vec![];
+
+    if let Err(e) = script_engine.load_scripts(&mut logger, &mut errors) {
+        let ctx = format!("Failed to load scripts: {e}");
+        logger.err(&ctx);
+        start_error = Some(ErrorPage::new(errors, ctx));
+    }
+
     // Disable logging before starting loop
-    logger.log("TIP: to toggle logging, press F5");
-    logger.enabled = false;
+    logger.log("TIP: to toggle logging, press F10");
+    logger.enabled = false || cfg!(debug_assertions);
 
     // Watch for script changes
-    let (tx, rx) = mpsc::channel();
-
-    let watch_dir = script_engine.script_dir.clone();
-    thread::spawn(move || script::watch(watch_dir, tx));
+    let mut menu = Menu::new(script_engine, logger);
+    menu.error = start_error;
 
     loop {
-        if let Ok(Some(msg)) = rx.try_recv() {
-            match msg {
-                Message::ReloadScripts => {
-                    logger.log("Reloading scripts...");
-                    if let Err(e) = script_engine.load_scripts(&mut logger) {
-                        //
-                    }
-                }
-                Message::Error(e) => {
-                    // TODO
-                    logger.log("Hello");
-                }
-            }
-        }
-
-        logger.enabled ^= is_key_pressed(KeyCode::F5);
-
         menu.update();
         menu.draw();
 
-        if logger.enabled {
-            let fps = get_fps();
-            let color = if fps >= 50 {
-                GREEN
-            } else if fps >= 30 {
-                ORANGE
-            } else {
-                RED
-            };
-            draw_text(&format!("FPS: {fps}"), 0., 20., 20., color);
-        }
         next_frame().await;
     }
 }

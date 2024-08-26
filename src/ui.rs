@@ -64,4 +64,11 @@ impl Logger {
         // Log the information
         println!("LOGGER: {text}")
     }
+    pub fn err(&self, text: impl Display) {
+        if !self.enabled {
+            return;
+        }
+
+        println!("LOGGER: ERROR: {text}")
+    }
 }
