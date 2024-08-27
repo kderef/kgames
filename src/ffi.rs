@@ -1,4 +1,5 @@
 use macroquad::prelude::*;
+use rhai::EvalAltResult;
 use KeyCode::*;
 
 pub const COLORS: [(&'static str, Color); 25] = [
@@ -152,3 +153,8 @@ pub const KEYS: [(&'static str, KeyCode); 121] = [
     ("KEY_MENU", Menu),
     ("KEY_UNKOWN", Unknown),
 ];
+
+pub fn load_texture_sync(path: &str) -> Result<Texture2D, Box<EvalAltResult>> {
+    futures::executor::block_on(load_texture(path)) //
+        .map_err(|e| Box::new(EvalAltResult::from(e.to_string())))
+}

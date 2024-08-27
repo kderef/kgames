@@ -1,9 +1,7 @@
-use macroquad::{color, prelude::*};
+use macroquad::prelude::*;
 use std::ffi::OsStr;
-use std::fs::{self, File};
-use std::path::{Path, PathBuf};
-use std::sync::mpsc::{Receiver, Sender};
-use std::sync::Arc;
+use std::fs;
+use std::path::PathBuf;
 use std::time::SystemTime;
 
 use crate::ffi::*;
@@ -29,6 +27,7 @@ pub struct Engine<'a> {
     pub engine: rhai::Engine,
     pub global_dir: PathBuf,
     pub script_dir: PathBuf,
+    pub asset_dir: PathBuf,
     pub scripts: Vec<Script>,
     pub scope: Scope<'a>,
 }
@@ -49,6 +48,7 @@ impl<'a> Engine<'a> {
         engine.register_type_with_name::<Rect>("Rect");
         engine.register_type_with_name::<KeyCode>("Key");
         engine.register_type_with_name::<MouseButton>("Mouse");
+        engine.register_type_with_name::<Texture2D>("Texture");
     }
 
     fn register_fns(engine: &mut rhai::Engine) {
@@ -58,6 +58,11 @@ impl<'a> Engine<'a> {
             .register_fn("text", draw_text)
             .register_fn("circle", draw_circle)
             .register_fn("line", draw_line)
+            .register_fn("msgbox", |title: ImmutableString, msg: ImmutableString| {
+                let _ = msgbox::create(title.as_str(), msg.as_str(), msgbox::IconType::Info);
+            })
+            // textures
+            .register_fn("load_texture", load_texture_sync)
             // Information
             .register_fn("deltatime", get_frame_time)
             .register_fn("screen_width", screen_width)
@@ -87,6 +92,7 @@ impl<'a> Engine<'a> {
         Self {
             engine,
             script_dir: global_dir.join("scripts"),
+            asset_dir: global_dir.join("assets"),
             global_dir,
             scripts: vec![],
             scope,
@@ -94,8 +100,11 @@ impl<'a> Engine<'a> {
     }
 
     pub fn ensure_dirs_exist(&self) -> anyhow::Result<()> {
-        if !self.global_dir.is_dir() || !self.script_dir.exists() {
+        if !self.global_dir.is_dir() || !self.script_dir.is_dir() {
             fs::create_dir_all(&self.script_dir)?;
+        }
+        if !self.asset_dir.is_dir() {
+            fs::create_dir(&self.asset_dir)?;
         }
         Ok(())
     }
@@ -125,29 +134,43 @@ impl<'a> Engine<'a> {
                 }
                 Some(e) if e != ext => {
                     logger.log(format!(
-                        "Skipping file with unkown(not .rhai) extension: {path:?}"
+                        "Skipping file with unknown(not .rhai) extension: {path:?}"
                     ));
                     continue;
                 }
                 _ => {} // Correct extension
             }
 
+            // Error handling
+            let mut add_err = |e| {
+                errors.push((path.clone(), e));
+                result = Err(anyhow::anyhow!("Failed to load scripts"));
+            };
+
             // Check for update
-            let file_name = path.file_name();
             let metadata = file.metadata()?;
             let modified = metadata.modified()?;
             if let Some(existing) = self.scripts.iter_mut().find(|s| s.path == path) {
                 if existing.modified != modified {
                     existing.modified = modified;
                     existing.ast = self.engine.compile(fs::read_to_string(&path)?)?;
+                    let contents = match fs::read_to_string(&path) {
+                        Ok(c) => c,
+                        Err(e) => {
+                            add_err(e.into());
+                            continue;
+                        }
+                    };
+                    existing.ast = match self.engine.compile(contents) {
+                        Ok(a) => a,
+                        Err(e) => {
+                            add_err(e.into());
+                            continue;
+                        }
+                    };
                 }
                 continue;
             }
-
-            let mut add_err = |e| {
-                errors.push((path.clone(), e));
-                result = Err(anyhow::anyhow!("Failed to load scripts"));
-            };
 
             // Add new script
             logger.log(format!("Adding new script {path:?}"));
@@ -174,6 +197,7 @@ impl<'a> Engine<'a> {
             // Run code once
             if let Err(e) = self.engine.run_ast_with_scope(&mut self.scope, &script.ast) {
                 let e = anyhow::anyhow!("Failed to init script: {e}");
+                result = Err(anyhow::anyhow!("{e}"));
                 errors.push((script.path.clone(), e.into()));
                 continue;
             }

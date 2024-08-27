@@ -1,4 +1,4 @@
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+// #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::process;
 
@@ -50,15 +50,15 @@ async fn main() {
     let mut logger = Logger::new(true);
     let mut script_engine = Engine::new();
 
-    logger.log("UI and scripting engine initialized");
+    logger.log("Scripting engine initialized");
 
     script_engine.ensure_dirs_exist().unwrap_or_else(|e| {
         logger.log(format!("Failed to create required directories: {e}"));
         process::exit(1);
     });
     logger.log(format!(
-        "Required directories in {:?} OK.",
-        script_engine.global_dir
+        "Required folders {:?}, {:?} and {:?} OK.",
+        script_engine.global_dir, script_engine.script_dir, script_engine.asset_dir
     ));
 
     let mut start_error = None;
@@ -70,8 +70,18 @@ async fn main() {
         start_error = Some(ErrorPage::new(errors, ctx));
     }
 
+    let scripts_count = script_engine.scripts.len();
+    if scripts_count == 0 {
+        logger.log(&format!(
+            "WARNING: No scripts ending in .rhai found in {:?}!",
+            script_engine.script_dir
+        ));
+    } else {
+        logger.log(&format!("Loaded {scripts_count} scripts!"));
+    }
+
     // Disable logging before starting loop
-    logger.log("TIP: to toggle logging, press F10");
+    logger.log("WARNING: logging will now be disabled, press F10 to reenable");
     logger.enabled = false || cfg!(debug_assertions);
 
     // Watch for script changes
