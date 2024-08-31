@@ -13,6 +13,7 @@ mod error;
 mod ffi;
 mod menu;
 mod script;
+mod texture;
 mod ui;
 
 #[cfg(not(target_os = "macos"))]

@@ -4,7 +4,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::SystemTime;
 
-use crate::ffi::*;
+use crate::{ffi::*, texture::AssetStore};
 use rhai::{ImmutableString, Scope, AST};
 
 use crate::ui::Logger;
@@ -19,7 +19,10 @@ pub struct Script {
 }
 impl Script {
     pub fn name(&self) -> &str {
-        self.path.file_name().and_then(|s| s.to_str()).unwrap_or("")
+        self.path
+            .file_name()
+            .and_then(OsStr::to_str)
+            .unwrap_or("INVALID_SCRIPT_NAME")
     }
 }
 
@@ -33,26 +36,26 @@ pub struct Engine<'a> {
 }
 
 impl<'a> Engine<'a> {
-    fn populate_scope(scope: &mut Scope) {
+    fn populate_scope(&mut self) {
         for (name, color) in COLORS {
-            scope.push_constant(name, color);
+            self.scope.push_constant(name, color);
         }
         for (name, key) in KEYS {
-            scope.push_constant(name, key);
+            self.scope.push_constant(name, key);
         }
     }
 
-    fn register_types(engine: &mut rhai::Engine) {
-        engine.register_type_with_name::<Color>("Color");
-        engine.register_type_with_name::<Vec2>("Vec2");
-        engine.register_type_with_name::<Rect>("Rect");
-        engine.register_type_with_name::<KeyCode>("Key");
-        engine.register_type_with_name::<MouseButton>("Mouse");
-        engine.register_type_with_name::<Texture2D>("Texture");
+    fn register_types(&mut self) {
+        self.engine.register_type_with_name::<Color>("Color");
+        self.engine.register_type_with_name::<Vec2>("Vec2");
+        self.engine.register_type_with_name::<Rect>("Rect");
+        self.engine.register_type_with_name::<KeyCode>("Key");
+        self.engine.register_type_with_name::<MouseButton>("Mouse");
+        self.engine.register_type_with_name::<Texture2D>("Texture");
     }
 
-    fn register_fns(engine: &mut rhai::Engine) {
-        engine
+    fn register_fns(&mut self) {
+        self.engine
             // Actions
             .register_fn("clear", clear_background)
             .register_fn("text", draw_text)
@@ -81,22 +84,23 @@ impl<'a> Engine<'a> {
     }
 
     pub fn new() -> Self {
-        let global_dir = PathBuf::from(GLOBAL_DIR);
-        let mut engine = rhai::Engine::new();
-        let mut scope = Scope::new();
+        let global_dir_ = PathBuf::from(GLOBAL_DIR);
+        let engine = rhai::Engine::new();
+        let scope = Scope::new();
 
-        Self::register_types(&mut engine);
-        Self::populate_scope(&mut scope);
-        Self::register_fns(&mut engine);
-
-        Self {
+        let mut s = Self {
             engine,
-            script_dir: global_dir.join("scripts"),
-            asset_dir: global_dir.join("assets"),
-            global_dir,
+            script_dir: global_dir_.join("scripts"),
+            asset_dir: global_dir_.join("assets"),
+            global_dir: global_dir_,
             scripts: vec![],
             scope,
-        }
+        };
+
+        s.register_types();
+        s.populate_scope();
+        s.register_fns();
+        s
     }
 
     pub fn ensure_dirs_exist(&self) -> anyhow::Result<()> {
@@ -144,16 +148,20 @@ impl<'a> Engine<'a> {
             // Error handling
             let mut add_err = |e| {
                 errors.push((path.clone(), e));
-                result = Err(anyhow::anyhow!("Failed to load scripts"));
+                if result.is_ok() {
+                    result = Err(anyhow::anyhow!("Failed to load scripts"));
+                }
             };
 
             // Check for update
             let metadata = file.metadata()?;
             let modified = metadata.modified()?;
+
             if let Some(existing) = self.scripts.iter_mut().find(|s| s.path == path) {
                 if existing.modified != modified {
                     existing.modified = modified;
                     existing.ast = self.engine.compile(fs::read_to_string(&path)?)?;
+
                     let contents = match fs::read_to_string(&path) {
                         Ok(c) => c,
                         Err(e) => {
@@ -194,6 +202,7 @@ impl<'a> Engine<'a> {
                 modified,
                 path,
             };
+
             // Run code once
             if let Err(e) = self.engine.run_ast_with_scope(&mut self.scope, &script.ast) {
                 let e = anyhow::anyhow!("Failed to init script: {e}");

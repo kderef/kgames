@@ -1,6 +1,17 @@
+use std::{
+    cell::OnceCell,
+    path::{Path, PathBuf},
+};
+
 use macroquad::prelude::*;
 use rhai::EvalAltResult;
 use KeyCode::*;
+
+use crate::texture::AssetStore;
+
+pub static TEXTURES: &[(&'static str, &[u8], ImageFormat)] = &[
+    // ("grass", &[], ImageFormat::Png)
+];
 
 pub const COLORS: [(&'static str, Color); 25] = [
     ("LIGHTGRAY", LIGHTGRAY),
@@ -154,7 +165,38 @@ pub const KEYS: [(&'static str, KeyCode); 121] = [
     ("KEY_UNKOWN", Unknown),
 ];
 
+fn to_eval_err(e: impl ToString) -> Box<EvalAltResult> {
+    Box::new(EvalAltResult::from(e.to_string()))
+}
+
+static mut GLOBAL_DIR: OnceCell<PathBuf> = OnceCell::new();
+pub fn global_dir() -> &'static PathBuf {
+    unsafe { GLOBAL_DIR.get_or_init(|| PathBuf::from(crate::script::GLOBAL_DIR)) }
+}
+
+/// Sync version of load_texture compatible with rhai
 pub fn load_texture_sync(path: &str) -> Result<Texture2D, Box<EvalAltResult>> {
-    futures::executor::block_on(load_texture(path)) //
-        .map_err(|e| Box::new(EvalAltResult::from(e.to_string())))
+    let path = global_dir().join("assets/").join(path);
+    let path = path.to_str().ok_or(format!(
+        "Failed to convert path {path:?} to string (Maybe invalid UTF-8?)"
+    ))?;
+    futures::executor::block_on(load_texture(path)).map_err(to_eval_err)
+}
+
+static mut ASSET_STORE: OnceCell<AssetStore> = OnceCell::new();
+fn asset_store() -> &'static AssetStore<'static> {
+    unsafe {
+        ASSET_STORE.get_or_init(|| {
+            let mut new = AssetStore::default();
+            new.load_textures(TEXTURES.iter());
+            new
+        })
+    }
+}
+
+/// Get stored texture (from engine)
+pub fn load_texture_stored(name: &str) -> Result<&Texture2D, Box<EvalAltResult>> {
+    asset_store()
+        .get_texture(name)
+        .ok_or(to_eval_err(format!("Texture not found: '{name}'")))
 }
