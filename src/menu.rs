@@ -44,19 +44,24 @@ impl<'a> Menu<'a> {
 
     #[inline]
     pub fn update(&mut self) {
-        self.logger.enabled ^= is_key_pressed(KeyCode::F10);
+        // TODO: Make it report error if script reload caused error
 
-        if self.error.is_some() {
-            return;
-        }
+        self.logger.enabled ^= is_key_pressed(KeyCode::F10);
 
         if is_key_pressed(KeyCode::F5) {
             let mut temp_errors = vec![];
-            if let Err(e) = self.engine.load_scripts(&mut self.logger, &mut temp_errors) {
-                let ctx = format!("Failed to reload scripts: {e}");
-                self.logger.err(&ctx);
-                self.error = Some(ErrorPage::new(temp_errors, ctx))
-            }
+            self.error =
+                if let Err(e) = self.engine.load_scripts(&mut self.logger, &mut temp_errors) {
+                    let ctx = format!("Failed to reload scripts: {e}");
+                    self.logger.err(&ctx);
+                    Some(ErrorPage::new(temp_errors, ctx))
+                } else {
+                    None
+                };
+        }
+
+        if self.error.is_some() {
+            return;
         }
 
         if is_key_pressed(KeyCode::Escape) {
