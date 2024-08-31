@@ -4,10 +4,68 @@ use std::{
 };
 
 use macroquad::prelude::*;
-use rhai::EvalAltResult;
+use rhai::{CustomType, EvalAltResult};
 use KeyCode::*;
 
 use crate::texture::AssetStore;
+
+// Macros
+// TODO: Add method() support for getters
+#[macro_export]
+macro_rules! reg_type {
+    (
+        $engine: expr => {
+            $(
+                $name:ty as $exposed_name:literal $(=
+                    $($field:ident),*)?;
+            )*
+        }
+    ) => {
+        $(
+            $(
+                $engine.register_type_with_name::<$name>($exposed_name);
+
+                // Register get/set for each field or method
+                $(
+                    $engine.register_get_set(
+                        stringify!($field),
+                        |_self: &mut $name| _self.$field,
+                        |_self: &mut $name, new| _self.$field = new
+                    );
+                )*
+
+            )*
+        )?
+    };
+    // Getters via methods
+    (
+        $engine: expr => {
+            $(
+                $name:ty = $($method:ident()),*;
+            )*
+        }
+    ) => {
+       $(
+           $(
+                $engine.register_get(
+                    stringify!($field),
+                    |_self: &mut $name| _self.$method(),
+                );
+           )*
+        )*
+    };
+}
+
+/*
+reg_type! {
+    self.engine => {
+        Vec2 as "Vec2" = r, g, b, a
+
+    }
+}
+*/
+
+// Constants
 
 pub static TEXTURES: &[(&'static str, &[u8], ImageFormat)] = &[
     // ("grass", &[], ImageFormat::Png)
@@ -188,7 +246,7 @@ fn asset_store() -> &'static AssetStore<'static> {
     unsafe {
         ASSET_STORE.get_or_init(|| {
             let mut new = AssetStore::default();
-            new.load_textures(TEXTURES.iter());
+            new.load_textures(TEXTURES.into_iter());
             new
         })
     }

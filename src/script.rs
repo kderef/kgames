@@ -4,7 +4,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::SystemTime;
 
-use crate::{ffi::*, texture::AssetStore};
+use crate::{ffi::*, reg_type, texture::AssetStore};
 use rhai::{ImmutableString, Scope, AST};
 
 use crate::ui::Logger;
@@ -46,12 +46,26 @@ impl<'a> Engine<'a> {
     }
 
     fn register_types(&mut self) {
-        self.engine.register_type_with_name::<Color>("Color");
-        self.engine.register_type_with_name::<Vec2>("Vec2");
-        self.engine.register_type_with_name::<Rect>("Rect");
-        self.engine.register_type_with_name::<KeyCode>("Key");
-        self.engine.register_type_with_name::<MouseButton>("Mouse");
-        self.engine.register_type_with_name::<Texture2D>("Texture");
+        // Fields
+        reg_type! {
+            self.engine => {
+                Vec2 as "Vec2" = x, y;
+                Vec3 as "Vec3" = x, y, z;
+                Rect as "Rect" = x, y, w, h;
+                Color as "Color" = r, g, b, a;
+                KeyCode as "Key";
+                Texture2D as "Texture";
+                MouseButton as "Mouse";
+            }
+        }
+
+        // Methods
+        reg_type! {
+            self.engine => {
+                Texture2D = width(), height();
+                Rect = size(), center();
+            }
+        }
     }
 
     fn register_fns(&mut self) {
@@ -61,6 +75,7 @@ impl<'a> Engine<'a> {
             .register_fn("text", draw_text)
             .register_fn("circle", draw_circle)
             .register_fn("line", draw_line)
+            .register_fn("rectangle", draw_rectangle)
             .register_fn("msgbox", |title: ImmutableString, msg: ImmutableString| {
                 let _ = msgbox::create(title.as_str(), msg.as_str(), msgbox::IconType::Info);
             })
@@ -79,7 +94,9 @@ impl<'a> Engine<'a> {
             .register_fn("mouse_released", is_mouse_button_released)
             .register_fn("fps", get_fps)
             // Getters/Setters
-            .register_fn("rectangle", draw_rectangle)
+            .register_fn("vec2", vec2)
+            .register_fn("vec3", vec3)
+            .register_fn("rect", Rect::new)
             .register_fn("color", Color::new);
     }
 
