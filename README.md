@@ -38,3 +38,8 @@ fn draw() {
 ```
 Then press F5 or restart the app, and you should see an option for `moving_ball.rhai`.  
 **TIP:** You can toggle terminal logs and FPS counter with F10.  
+---
+### Globals list  
+All the constants and functions exposed to the scripts.
+
+# TODO
