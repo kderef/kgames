@@ -5,7 +5,10 @@ use std::process;
 use error::ErrorPage;
 use macroquad::prelude::*;
 use menu::Menu;
-use miniquad::conf::{Icon, Platform};
+use miniquad::{
+    conf::{Icon, Platform},
+    date,
+};
 use script::Engine;
 use ui::Logger;
 
@@ -48,11 +51,13 @@ fn window() -> Conf {
 
 #[macroquad::main(window)]
 async fn main() {
+    // Initialize
     let mut logger = Logger::new(true);
     let mut script_engine = Engine::new();
 
     logger.log("Scripting engine initialized");
 
+    // Create dirs (if not exist)
     script_engine.ensure_dirs_exist().unwrap_or_else(|e| {
         logger.log(format!("Failed to create required directories: {e}"));
         process::exit(1);
@@ -61,7 +66,14 @@ async fn main() {
         "Required folders {:?}, {:?} and {:?} OK.",
         script_engine.global_dir, script_engine.script_dir, script_engine.asset_dir
     ));
+    // Create readme
+    let readme = "README.txt";
+    match script_engine.create_readme(readme) {
+        Ok(created) => logger.log(&format!("Created readme at {created:?}")),
+        Err(e) => logger.err(&format!("Failed to create readme '{readme}': {e}")),
+    }
 
+    // Try to load scripts on startup.
     let mut start_error = None;
     let mut errors = vec![];
 
@@ -71,6 +83,7 @@ async fn main() {
         start_error = Some(ErrorPage::new(errors, ctx));
     }
 
+    // Report script count
     let scripts_count = script_engine.scripts.len();
     if scripts_count == 0 {
         logger.log(&format!(

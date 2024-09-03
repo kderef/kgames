@@ -42,6 +42,7 @@ impl<'a> Menu<'a> {
         }
     }
 
+    /// Call update() of the script, and update menu state
     #[inline]
     pub fn update(&mut self) {
         // TODO: Make it report error if script reload caused error

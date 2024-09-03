@@ -130,6 +130,16 @@ impl<'a> Engine<'a> {
         Ok(())
     }
 
+    /// Tries to create the readme file, returning the full path on success
+    pub fn create_readme(&self, filename: &str) -> anyhow::Result<PathBuf> {
+        static README: &str = include_str!("../res/README.txt");
+        let path = self.global_dir.join(filename);
+        if !path.is_file() {
+            fs::write(&path, README)?;
+        }
+        Ok(path)
+    }
+
     pub fn load_scripts(
         &mut self,
         logger: &mut Logger,
