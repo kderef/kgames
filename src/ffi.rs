@@ -1,16 +1,22 @@
-use std::{
-    cell::OnceCell,
-    path::{Path, PathBuf},
-};
+use std::{cell::OnceCell, path::PathBuf};
 
 use macroquad::prelude::*;
-use rhai::{CustomType, EvalAltResult};
+use rhai::{EvalAltResult, ImmutableString};
 use KeyCode::*;
 
 use crate::texture::AssetStore;
 
 // Macros
-// TODO: Add method() support for getters
+/// Macro for adding getters/setters to exposed types.
+/// Example:
+/// ```rust
+/// reg_type! {
+///     self.engine => {
+///         Vec2 as "Vec2" = x, y;
+///         Vec3 as "Vec3" = x, y, z;
+///     }
+///}
+/// ```
 #[macro_export]
 macro_rules! reg_type {
     (
@@ -242,7 +248,7 @@ pub fn load_texture_sync(path: &str) -> Result<Texture2D, Box<EvalAltResult>> {
 }
 
 static mut ASSET_STORE: OnceCell<AssetStore> = OnceCell::new();
-fn asset_store() -> &'static AssetStore<'static> {
+pub fn asset_store() -> &'static AssetStore<'static> {
     unsafe {
         ASSET_STORE.get_or_init(|| {
             let mut new = AssetStore::default();
@@ -252,9 +258,24 @@ fn asset_store() -> &'static AssetStore<'static> {
     }
 }
 
+type RhaiResult<T> = Result<T, Box<EvalAltResult>>;
+
 /// Get stored texture (from engine)
-pub fn load_texture_stored(name: &str) -> Result<&Texture2D, Box<EvalAltResult>> {
+pub fn load_texture_stored(name: &str) -> RhaiResult<&Texture2D> {
     asset_store()
         .get_texture(name)
         .ok_or(to_eval_err(format!("Texture not found: '{name}'")))
+}
+
+pub fn draw_texture_stored<'a>(
+    name: &'a str,
+    x: f32,
+    y: f32,
+    tint: Color,
+) -> RhaiResult<&'a Texture2D> {
+    asset_store()
+        .get_texture(name)
+        .ok_or(Box::new(EvalAltResult::from(format!(
+            "Texture not found: {name:?}"
+        ))))
 }

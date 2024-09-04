@@ -2,24 +2,6 @@ use std::fmt::Display;
 
 use macroquad::prelude::*;
 
-pub trait ExtendedDraw {
-    type ExtParams;
-    fn draw(&self, color: Color);
-    fn draw_ex(&self, params: Self::ExtParams);
-}
-
-impl ExtendedDraw for Rect {
-    type ExtParams = DrawRectangleParams;
-    #[inline(always)]
-    fn draw(&self, color: Color) {
-        draw_rectangle(self.x, self.y, self.w, self.h, color);
-    }
-    #[inline(always)]
-    fn draw_ex(&self, params: Self::ExtParams) {
-        draw_rectangle_ex(self.x, self.y, self.w, self.h, params);
-    }
-}
-
 pub fn button(text: &str, bounds: Rect, font_size: f32) -> bool {
     const BG: Color = Color::new(0., 0., 0., 0.3);
     const BG_HOVER: Color = Color::new(0., 0., 0., 0.5);
@@ -36,7 +18,7 @@ pub fn button(text: &str, bounds: Rect, font_size: f32) -> bool {
     } else {
         BG
     };
-    bounds.draw(color);
+    draw_rectangle(bounds.x, bounds.y, bounds.w, bounds.h, color);
 
     let center = bounds.center();
     let text_size = measure_text(text, None, font_size as u16, 1.0);

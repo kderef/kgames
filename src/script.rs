@@ -2,10 +2,10 @@ use macroquad::prelude::*;
 use std::fs::{self, DirEntry};
 use std::path::PathBuf;
 use std::time::SystemTime;
-use std::{ffi::OsStr, io, path::Path};
+use std::{ffi::OsStr, io};
 
-use crate::{ffi::*, reg_type, texture::AssetStore};
-use rhai::{ImmutableString, Scope, AST};
+use crate::{ffi::asset_store, ffi::*, reg_type};
+use rhai::{EvalAltResult, ImmutableString, Scope, AST};
 
 use crate::ui::Logger;
 
@@ -87,8 +87,11 @@ impl<'a> Engine<'a> {
             .register_fn("msgbox", |title: ImmutableString, msg: ImmutableString| {
                 let _ = msgbox::create(title.as_str(), msg.as_str(), msgbox::IconType::Info);
             })
+            .register_fn("texture", draw_texture)
+            .register_fn("texture", draw_texture_stored)
             // textures
             .register_fn("load_texture", load_texture_sync)
+            .register_fn("get_texture", load_texture_stored)
             // Information
             .register_fn("deltatime", get_frame_time)
             .register_fn("screen_width", screen_width)
@@ -129,6 +132,7 @@ impl<'a> Engine<'a> {
         s
     }
 
+    /// Check if all the dirs exist, if not creating them
     pub fn ensure_dirs_exist(&self) -> anyhow::Result<()> {
         if !self.global_dir.is_dir() || !self.script_dir.is_dir() {
             fs::create_dir_all(&self.script_dir)?;
@@ -147,6 +151,7 @@ impl<'a> Engine<'a> {
         Ok(path)
     }
 
+    /// Internal
     fn load_scripts_from_dir(
         &mut self,
         logger: &mut Logger,
@@ -252,7 +257,7 @@ impl<'a> Engine<'a> {
         result
     }
 
-    /// dir: None = script_dir, Some(_) reserved for recursive use.
+    /// Load scripts from `from`, in order.
     pub fn load_scripts(
         &mut self,
         logger: &mut Logger,
