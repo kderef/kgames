@@ -68,7 +68,7 @@ async fn main() {
     ));
 
     // Create readme
-    let readme = "README.txt";
+    let readme = "README.md";
     match engine.create_readme(readme) {
         Ok(created) => logger.log(&format!("Created readme '{readme}' at {created:?}")),
         Err(e) => logger.err(&format!("Failed to create readme '{readme}': {e}")),
