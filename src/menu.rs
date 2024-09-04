@@ -2,7 +2,11 @@ use macroquad::prelude::*;
 use rhai::Scope;
 use std::path::PathBuf;
 
-use crate::{error::ErrorPage, script::Engine, ui::Logger};
+use crate::{
+    error::ErrorPage,
+    script::{Engine, ScriptDir},
+    ui::Logger,
+};
 
 pub struct Menu<'a> {
     engine: Engine<'a>,
@@ -11,9 +15,10 @@ pub struct Menu<'a> {
     pub error: Option<ErrorPage>,
 }
 
-impl<'a> Menu<'a> {
-    const GAME_TITLE_SIZE: f32 = 20.0;
+// File functions
+impl<'a> Menu<'a> {}
 
+impl<'a> Menu<'a> {
     pub fn new(engine: Engine<'a>, logger: Logger) -> Self {
         Self {
             engine,
@@ -50,15 +55,14 @@ impl<'a> Menu<'a> {
         self.logger.enabled ^= is_key_pressed(KeyCode::F10);
 
         if is_key_pressed(KeyCode::F5) {
-            let mut temp_errors = vec![];
-            self.error =
-                if let Err(e) = self.engine.load_scripts(&mut self.logger, &mut temp_errors) {
-                    let ctx = format!("Failed to reload scripts: {e}");
-                    self.logger.err(&ctx);
-                    Some(ErrorPage::new(temp_errors, ctx))
-                } else {
-                    None
-                };
+            let mut errors = vec![];
+            if let Err(e) = self.engine.load_scripts(
+                &mut self.logger,
+                &mut errors,
+                &[ScriptDir::Examples, ScriptDir::Scripts],
+            ) {
+                self.error = Some(ErrorPage::new(errors, e));
+            }
         }
 
         if self.error.is_some() {

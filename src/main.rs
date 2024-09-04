@@ -9,7 +9,7 @@ use miniquad::{
     conf::{Icon, Platform},
     date,
 };
-use script::Engine;
+use script::{Engine, ScriptDir};
 use ui::Logger;
 
 mod error;
@@ -53,53 +53,54 @@ fn window() -> Conf {
 async fn main() {
     // Initialize
     let mut logger = Logger::new(true);
-    let mut script_engine = Engine::new();
+    let mut engine = Engine::new();
 
     logger.log("Scripting engine initialized");
 
     // Create dirs (if not exist)
-    script_engine.ensure_dirs_exist().unwrap_or_else(|e| {
+    engine.ensure_dirs_exist().unwrap_or_else(|e| {
         logger.log(format!("Failed to create required directories: {e}"));
         process::exit(1);
     });
     logger.log(format!(
         "Required folders {:?}, {:?} and {:?} OK.",
-        script_engine.global_dir, script_engine.script_dir, script_engine.asset_dir
+        engine.global_dir, engine.script_dir, engine.asset_dir
     ));
+
     // Create readme
     let readme = "README.txt";
-    match script_engine.create_readme(readme) {
-        Ok(created) => logger.log(&format!("Created readme at {created:?}")),
+    match engine.create_readme(readme) {
+        Ok(created) => logger.log(&format!("Created readme '{readme}' at {created:?}")),
         Err(e) => logger.err(&format!("Failed to create readme '{readme}': {e}")),
     }
 
     // Try to load scripts on startup.
     let mut start_error = None;
     let mut errors = vec![];
-
-    if let Err(e) = script_engine.load_scripts(&mut logger, &mut errors) {
-        let ctx = format!("Failed to load scripts: {e}");
-        logger.err(&ctx);
-        start_error = Some(ErrorPage::new(errors, ctx));
-    }
+    if let Err(e) = engine.load_scripts(
+        &mut logger,
+        &mut errors,
+        &[ScriptDir::Scripts, ScriptDir::Examples],
+    ) {}
 
     // Report script count
-    let scripts_count = script_engine.scripts.len();
+    let scripts_count = engine.scripts.len();
     if scripts_count == 0 {
         logger.log(&format!(
             "WARNING: No scripts ending in .rhai found in {:?}!",
-            script_engine.script_dir
+            engine.script_dir
         ));
     } else {
         logger.log(&format!("Loaded {scripts_count} scripts!"));
     }
 
     // Disable logging before starting loop
+    #[cfg(not(debug_assertions))]
     logger.log("WARNING: logging will now be disabled, press F10 to reenable");
     logger.enabled = false || cfg!(debug_assertions);
 
     // Watch for script changes
-    let mut menu = Menu::new(script_engine, logger);
+    let mut menu = Menu::new(engine, logger);
     menu.error = start_error;
 
     loop {

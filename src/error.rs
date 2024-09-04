@@ -4,7 +4,10 @@ use macroquad::{
 };
 use std::path::{Path, PathBuf};
 
-use crate::{script::Engine, ui::Logger};
+use crate::{
+    script::{Engine, ScriptDir},
+    ui::Logger,
+};
 
 pub struct ErrorPage {
     context: String,
@@ -135,8 +138,12 @@ impl ErrorPage {
         }
         if is_key_pressed(KeyCode::F5) {
             self.errors.clear();
-            if let Err(e) = engine.load_scripts(logger, &mut self.errors) {
-                self.context = format!("Failed to reload scripts: {e}")
+            if let Err(e) = engine.load_scripts(
+                logger,
+                &mut self.errors,
+                &[ScriptDir::Examples, ScriptDir::Scripts],
+            ) {
+                self.context = e.to_string();
             }
         }
 

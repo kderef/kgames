@@ -1,8 +1,8 @@
 use macroquad::prelude::*;
-use std::ffi::OsStr;
-use std::fs;
+use std::fs::{self, DirEntry};
 use std::path::PathBuf;
 use std::time::SystemTime;
+use std::{ffi::OsStr, io, path::Path};
 
 use crate::{ffi::*, reg_type, texture::AssetStore};
 use rhai::{ImmutableString, Scope, AST};
@@ -15,6 +15,7 @@ pub const GLOBAL_DIR: &str = env!("CARGO_PKG_NAME");
 pub struct Script {
     path: PathBuf,
     modified: SystemTime,
+    pub is_example: bool,
     pub ast: AST,
 }
 impl Script {
@@ -30,9 +31,16 @@ pub struct Engine<'a> {
     pub engine: rhai::Engine,
     pub global_dir: PathBuf,
     pub script_dir: PathBuf,
+    pub example_dir: PathBuf,
     pub asset_dir: PathBuf,
     pub scripts: Vec<Script>,
     pub scope: Scope<'a>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ScriptDir {
+    Scripts,
+    Examples,
 }
 
 impl<'a> Engine<'a> {
@@ -109,6 +117,7 @@ impl<'a> Engine<'a> {
             engine,
             script_dir: global_dir_.join("scripts"),
             asset_dir: global_dir_.join("assets"),
+            example_dir: global_dir_.join("examples"),
             global_dir: global_dir_,
             scripts: vec![],
             scope,
@@ -134,19 +143,17 @@ impl<'a> Engine<'a> {
     pub fn create_readme(&self, filename: &str) -> anyhow::Result<PathBuf> {
         static README: &str = include_str!("../res/README.txt");
         let path = self.global_dir.join(filename);
-        if !path.is_file() {
-            fs::write(&path, README)?;
-        }
+        fs::write(&path, README)?;
         Ok(path)
     }
 
-    pub fn load_scripts(
+    fn load_scripts_from_dir(
         &mut self,
         logger: &mut Logger,
         errors: &mut Vec<(PathBuf, anyhow::Error)>,
+        scripts: impl Iterator<Item = io::Result<DirEntry>>,
     ) -> anyhow::Result<()> {
         let mut result = Ok(());
-        let scripts = fs::read_dir(&self.script_dir)?;
         let ext = OsStr::new("rhai");
 
         for file in scripts {
@@ -228,6 +235,7 @@ impl<'a> Engine<'a> {
                 ast,
                 modified,
                 path,
+                is_example: false,
             };
 
             // Run code once
@@ -241,6 +249,30 @@ impl<'a> Engine<'a> {
             self.scripts.push(script);
         }
 
+        result
+    }
+
+    /// dir: None = script_dir, Some(_) reserved for recursive use.
+    pub fn load_scripts(
+        &mut self,
+        logger: &mut Logger,
+        errors: &mut Vec<(PathBuf, anyhow::Error)>,
+        from: &[ScriptDir],
+    ) -> anyhow::Result<()> {
+        let mut result = Ok(());
+        for source in from {
+            let src = match source {
+                ScriptDir::Scripts => &self.script_dir,
+                ScriptDir::Examples => &self.example_dir,
+            };
+
+            logger.log(format!("==> Loading scripts from {src:?}"));
+
+            let scripts = fs::read_dir(src)?;
+            if let Err(e) = self.load_scripts_from_dir(logger, errors, scripts) {
+                result = Err(e);
+            }
+        }
         result
     }
 }
