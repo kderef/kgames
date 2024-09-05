@@ -42,7 +42,7 @@ impl<'a> Menu<'a> {
                 WHITE,
             );
             if is_key_pressed(unsafe { std::mem::transmute(KeyCode::Key0 as u16 + i as u16) }) {
-                self.selected = Some(i);
+                self.selected = Some(i - 1);
                 return;
             }
         }
