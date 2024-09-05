@@ -31,6 +31,7 @@ impl<'a> Menu<'a> {
     fn draw_selection(&mut self) {
         // FIXME: temporary solution
         for (i, name) in self.engine.scripts.iter().enumerate() {
+            let i = i + 1;
             let (x, y, w, h) = (200., 200., 500., 50.);
             draw_rectangle(x, y + h * i as f32, w, h, BLACK);
             draw_text(
@@ -40,7 +41,7 @@ impl<'a> Menu<'a> {
                 h * 0.8,
                 WHITE,
             );
-            if is_key_pressed(unsafe { std::mem::transmute(KeyCode::Key0 as u8 + i as u8) }) {
+            if is_key_pressed(unsafe { std::mem::transmute(KeyCode::Key0 as u16 + i as u16) }) {
                 self.selected = Some(i);
                 return;
             }
