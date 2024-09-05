@@ -4,7 +4,7 @@ use macroquad::prelude::*;
 use rhai::{EvalAltResult, ImmutableString};
 use KeyCode::*;
 
-use crate::texture::AssetStore;
+use crate::texture::{asset_store, asset_store_mut, AssetStore};
 
 // Macros
 /// Macro for adding getters/setters to exposed types.
@@ -72,10 +72,6 @@ reg_type! {
 */
 
 // Constants
-
-pub static TEXTURES: &[(&'static str, &[u8], ImageFormat)] = &[
-    // ("grass", &[], ImageFormat::Png)
-];
 
 pub const COLORS: [(&'static str, Color); 25] = [
     ("LIGHTGRAY", LIGHTGRAY),
@@ -239,23 +235,21 @@ pub fn global_dir() -> &'static PathBuf {
 }
 
 /// Sync version of load_texture compatible with rhai
-pub fn load_texture_sync(path: &str) -> Result<Texture2D, Box<EvalAltResult>> {
-    let path = global_dir().join("assets/").join(path);
-    let path = path.to_str().ok_or(format!(
+pub fn load_texture_sync(path: &str) -> Result<&Texture2D, Box<EvalAltResult>> {
+    let complete_path = global_dir().join("assets/").join(path);
+
+    let path_str = complete_path.to_str().ok_or(format!(
         "Failed to convert path {path:?} to string (Maybe invalid UTF-8?)"
     ))?;
-    futures::executor::block_on(load_texture(path)).map_err(to_eval_err)
-}
 
-static mut ASSET_STORE: OnceCell<AssetStore> = OnceCell::new();
-pub fn asset_store() -> &'static AssetStore<'static> {
-    unsafe {
-        ASSET_STORE.get_or_init(|| {
-            let mut new = AssetStore::default();
-            new.load_textures(TEXTURES.into_iter());
-            new
-        })
-    }
+    let texture = futures::executor::block_on(load_texture(path_str)).map_err(to_eval_err)?;
+
+    asset_store_mut()
+        .user_textures
+        .insert(path_str.to_string().into_boxed_str(), texture);
+
+    // NOTE: it is inserted, so we know it exists
+    Ok(unsafe { asset_store_mut().user_textures.get(path).unwrap_unchecked() })
 }
 
 type RhaiResult<T> = Result<T, Box<EvalAltResult>>;
@@ -267,15 +261,8 @@ pub fn load_texture_stored(name: &str) -> RhaiResult<&Texture2D> {
         .ok_or(to_eval_err(format!("Texture not found: '{name}'")))
 }
 
-pub fn draw_texture_stored<'a>(
-    name: &'a str,
-    x: f32,
-    y: f32,
-    tint: Color,
-) -> RhaiResult<&'a Texture2D> {
-    asset_store()
-        .get_texture(name)
-        .ok_or(Box::new(EvalAltResult::from(format!(
-            "Texture not found: {name:?}"
-        ))))
+pub fn draw_texture_stored(name: &str, x: f32, y: f32, tint: Color) -> RhaiResult<()> {
+    let tex = load_texture_stored(name)?;
+    draw_texture(tex, x, y, tint);
+    Ok(())
 }

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::time::SystemTime;
 use std::{ffi::OsStr, io};
 
-use crate::{ffi::asset_store, ffi::*, reg_type};
+use crate::{ffi::*, reg_type, texture::asset_store};
 use rhai::{EvalAltResult, ImmutableString, Scope, AST};
 
 use crate::ui::Logger;
@@ -83,7 +83,9 @@ impl<'a> Engine<'a> {
             .register_fn("text", draw_text)
             .register_fn("circle", draw_circle)
             .register_fn("line", draw_line)
+            .register_fn("triangle", draw_triangle)
             .register_fn("rectangle", draw_rectangle)
+            .register_fn("rectangle_lines", draw_rectangle_lines)
             .register_fn("msgbox", |title: ImmutableString, msg: ImmutableString| {
                 let _ = msgbox::create(title.as_str(), msg.as_str(), msgbox::IconType::Info);
             })
@@ -91,7 +93,6 @@ impl<'a> Engine<'a> {
             .register_fn("texture", draw_texture_stored)
             // textures
             .register_fn("load_texture", load_texture_sync)
-            .register_fn("get_texture", load_texture_stored)
             // Information
             .register_fn("deltatime", get_frame_time)
             .register_fn("screen_width", screen_width)
@@ -276,9 +277,16 @@ impl<'a> Engine<'a> {
 
             logger.log(format!("==> Loading scripts from {src:?}"));
 
-            let scripts = fs::read_dir(src)?;
-            if let Err(e) = self.load_scripts_from_dir(logger, errors, scripts) {
-                result = Err(e);
+            match fs::read_dir(src) {
+                Ok(scripts) => {
+                    if let Err(e) = self.load_scripts_from_dir(logger, errors, scripts) {
+                        result = Err(e);
+                    }
+                }
+                Err(e) => {
+                    logger.err(format!("Failed to read dir {src:?}: {e}"));
+                    result = Err(e.into());
+                }
             }
         }
         result

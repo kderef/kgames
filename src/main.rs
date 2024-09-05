@@ -81,7 +81,12 @@ async fn main() {
         &mut logger,
         &mut errors,
         &[ScriptDir::Scripts, ScriptDir::Examples],
-    ) {}
+    ) {
+        start_error = Some(ErrorPage::new(
+            errors,
+            format!("Failed to init scripts: {e}"),
+        ));
+    }
 
     // Report script count
     let scripts_count = engine.scripts.len();
@@ -94,10 +99,9 @@ async fn main() {
         logger.log(&format!("Loaded {scripts_count} scripts!"));
     }
 
-    // Disable logging before starting loop
-    #[cfg(not(debug_assertions))]
-    logger.log("WARNING: logging will now be disabled, press F10 to reenable");
-    logger.enabled = false || cfg!(debug_assertions);
+    // Info messages
+    logger.log("NOTE: logging     can be disabled / toggled with F10");
+    logger.log("NOTE: FPS counter can be enabled  / toggled with F12");
 
     // Watch for script changes
     let mut menu = Menu::new(engine, logger);
