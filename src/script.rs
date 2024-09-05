@@ -137,6 +137,9 @@ impl<'a> Engine<'a> {
         if !self.global_dir.is_dir() || !self.script_dir.is_dir() {
             fs::create_dir_all(&self.script_dir)?;
         }
+        if !self.example_dir.is_dir() {
+            fs::create_dir(&self.example_dir)?;
+        }
         if !self.asset_dir.is_dir() {
             fs::create_dir(&self.asset_dir)?;
         }
