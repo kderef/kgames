@@ -56,12 +56,14 @@ impl<'a> Menu<'a> {
         // TODO: Make it report error if script reload caused error
 
         if is_key_pressed(KeyCode::F10) {
-            self.logger.enabled = !self.logger.enabled;
-            self.logger.log(if self.logger.enabled {
-                "Enabling logging!"
+            let l = &mut self.logger;
+            if l.enabled {
+                l.warn("disabling logging! Reenable with F10");
+                l.enabled = false;
             } else {
-                "WARNING: disabling logging! Reenable with F10"
-            });
+                l.enabled = true;
+                l.log("Enabling logging!");
+            };
         }
         self.show_fps ^= is_key_pressed(KeyCode::F12);
 
@@ -101,12 +103,10 @@ impl<'a> Menu<'a> {
     #[inline]
     fn draw_fps(&self) {
         let fps = get_fps();
-        let color = if fps >= 50 {
-            GREEN
-        } else if fps >= 30 {
-            ORANGE
-        } else {
-            RED
+        let color = match fps {
+            50.. => GREEN,
+            30.. => ORANGE,
+            _ => RED,
         };
         draw_text(&format!("FPS: {fps}"), 0., 20., 20., color);
     }
@@ -138,7 +138,10 @@ impl<'a> Menu<'a> {
 
             return;
         }
+        self.draw_menu();
+    }
 
+    fn draw_menu(&mut self) {
         const BG: Color = Color::new(0.11, 0.12, 0.12, 1.0);
         clear_background(BG);
 

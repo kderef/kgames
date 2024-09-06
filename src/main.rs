@@ -100,8 +100,8 @@ async fn main() {
     }
 
     // Info messages
-    logger.log("NOTE: logging     can be disabled / toggled with F10");
-    logger.log("NOTE: FPS counter can be enabled  / toggled with F12\n");
+    logger.note("logging     can be disabled / toggled with F10");
+    logger.note("FPS counter can be enabled  / toggled with F12\n");
 
     // Watch for script changes
     let mut menu = Menu::new(engine, logger);

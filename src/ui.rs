@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use colored::Colorize;
 use macroquad::prelude::*;
 
 pub fn button(text: &str, bounds: Rect, font_size: f32) -> bool {
@@ -44,13 +45,22 @@ impl Logger {
         }
 
         // Log the information
-        println!("LOGGER: {text}")
+        let log = "info".green();
+        println!("{log} {text}")
     }
     pub fn err(&self, text: impl Display) {
         if !self.enabled {
             return;
         }
-
-        println!("LOGGER: ERROR: {text}")
+        let error = "error".bright_red().bold();
+        println!("{error} {text}")
+    }
+    pub fn note(&self, text: impl Display) {
+        let note = "note".bright_blue().bold();
+        println!("{note} {text}");
+    }
+    pub fn warn(&self, text: impl Display) {
+        let warning = "warn".yellow().bold();
+        println!("{warning} {text}");
     }
 }
