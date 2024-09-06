@@ -12,13 +12,15 @@ use crate::ui::Logger;
 pub const GLOBAL_DIR: &str = env!("CARGO_PKG_NAME");
 
 #[derive(Clone)]
-pub struct Script {
+pub struct Script<'a> {
     path: PathBuf,
     modified: SystemTime,
-    pub is_example: bool,
     pub ast: AST,
+    //TODO:
+    pub scope: Scope<'a>,
 }
-impl Script {
+
+impl<'a> Script<'a> {
     pub fn name(&self) -> &str {
         self.path
             .file_name()
@@ -33,8 +35,7 @@ pub struct Engine<'a> {
     pub script_dir: PathBuf,
     pub example_dir: PathBuf,
     pub asset_dir: PathBuf,
-    pub scripts: Vec<Script>,
-    pub scope: Scope<'a>,
+    pub scripts: Vec<Script<'a>>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -43,16 +44,16 @@ pub enum ScriptDir {
     Examples,
 }
 
-impl<'a> Engine<'a> {
-    fn populate_scope(&mut self) {
-        for (name, color) in COLORS {
-            self.scope.push_constant(name, color);
-        }
-        for (name, key) in KEYS {
-            self.scope.push_constant(name, key);
-        }
+fn populate_scope(scope: &mut Scope) {
+    for (name, color) in COLORS {
+        scope.push_constant(name, color);
     }
+    for (name, key) in KEYS {
+        scope.push_constant(name, key);
+    }
+}
 
+impl<'a> Engine<'a> {
     fn register_types(&mut self) {
         // Fields
         reg_type! {
@@ -80,7 +81,12 @@ impl<'a> Engine<'a> {
         self.engine
             // Actions
             .register_fn("clear", clear_background)
-            .register_fn("text", draw_text)
+            .register_fn(
+                "text",
+                |t: ImmutableString, x: f32, y: f32, sz: f32, tint: Color| {
+                    draw_text(t.as_str(), x, y, sz, tint);
+                },
+            )
             .register_fn("circle", draw_circle)
             .register_fn("line", draw_line)
             .register_fn("triangle", draw_triangle)
@@ -115,7 +121,6 @@ impl<'a> Engine<'a> {
     pub fn new() -> Self {
         let global_dir_ = PathBuf::from(GLOBAL_DIR);
         let engine = rhai::Engine::new();
-        let scope = Scope::new();
 
         let mut s = Self {
             engine,
@@ -124,11 +129,9 @@ impl<'a> Engine<'a> {
             example_dir: global_dir_.join("examples"),
             global_dir: global_dir_,
             scripts: vec![],
-            scope,
         };
 
         s.register_types();
-        s.populate_scope();
         s.register_fns();
         s
     }
@@ -240,15 +243,22 @@ impl<'a> Engine<'a> {
                 }
             };
 
-            let script = Script {
+            // Create script
+            let mut scope = Scope::new();
+            populate_scope(&mut scope);
+
+            let mut script = Script {
                 ast,
                 modified,
                 path,
-                is_example: false,
+                scope,
             };
 
             // Run code once
-            if let Err(e) = self.engine.run_ast_with_scope(&mut self.scope, &script.ast) {
+            if let Err(e) = self
+                .engine
+                .run_ast_with_scope(&mut script.scope, &script.ast)
+            {
                 let e = anyhow::anyhow!("Failed to init script: {e}");
                 result = Err(anyhow::anyhow!("{e}"));
                 errors.push((script.path.clone(), e.into()));

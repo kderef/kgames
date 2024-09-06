@@ -12,6 +12,7 @@ pub struct Menu<'a> {
     engine: Engine<'a>,
     selected: Option<usize>,
     logger: Logger,
+    pub show_fps: bool,
     pub error: Option<ErrorPage>,
 }
 
@@ -23,6 +24,7 @@ impl<'a> Menu<'a> {
         Self {
             engine,
             logger,
+            show_fps: false,
             selected: None,
             error: None,
         }
@@ -53,7 +55,15 @@ impl<'a> Menu<'a> {
     pub fn update(&mut self) {
         // TODO: Make it report error if script reload caused error
 
-        self.logger.enabled ^= is_key_pressed(KeyCode::F10);
+        if is_key_pressed(KeyCode::F10) {
+            self.logger.enabled = !self.logger.enabled;
+            self.logger.log(if self.logger.enabled {
+                "Enabling logging!"
+            } else {
+                "WARNING: disabling logging! Reenable with F10"
+            });
+        }
+        self.show_fps ^= is_key_pressed(KeyCode::F12);
 
         if is_key_pressed(KeyCode::F5) {
             let mut errors = vec![];
@@ -75,11 +85,11 @@ impl<'a> Menu<'a> {
         }
 
         if let Some(index) = self.selected {
-            let script = &self.engine.scripts[index];
+            let script = &mut self.engine.scripts[index];
             let result =
                 self.engine
                     .engine
-                    .call_fn::<()>(&mut self.engine.scope, &script.ast, "update", ());
+                    .call_fn::<()>(&mut script.scope, &script.ast, "update", ());
 
             if let Err(e) = result {
                 self.logger
@@ -111,11 +121,11 @@ impl<'a> Menu<'a> {
         }
 
         if let Some(index) = self.selected {
-            let script = &self.engine.scripts[index];
+            let script = &mut self.engine.scripts[index];
             let result =
                 self.engine
                     .engine
-                    .call_fn::<()>(&mut self.engine.scope, &script.ast, "draw", ());
+                    .call_fn::<()>(&mut script.scope, &script.ast, "draw", ());
 
             if let Err(e) = result {
                 self.logger
@@ -159,7 +169,7 @@ impl<'a> Menu<'a> {
         );
 
         //===== Draw FPS =====//
-        if self.logger.enabled {
+        if self.show_fps {
             self.draw_fps();
         }
     }
