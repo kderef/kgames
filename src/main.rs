@@ -1,5 +1,6 @@
 // #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use colored::Colorize;
 use std::process;
 
 use error::ErrorPage;
@@ -51,6 +52,18 @@ fn window() -> Conf {
 
 #[macroquad::main(window)]
 async fn main() {
+    println!(
+        "{name} {ver} {version}",
+        name = env!("CARGO_PKG_NAME").bold(),
+        ver = "version".bold(),
+        version = env!("CARGO_PKG_VERSION").green()
+    );
+    println!(
+        "Repository: {}",
+        env!("CARGO_PKG_REPOSITORY").green().underline()
+    );
+    println!("=========================");
+
     // Initialize
     let mut logger = Logger::new(true);
     let mut engine = Engine::new();
@@ -59,7 +72,7 @@ async fn main() {
 
     // Create dirs (if not exist)
     engine.ensure_dirs_exist().unwrap_or_else(|e| {
-        logger.log(format!("Failed to create required directories: {e}"));
+        logger.err(format!("Failed to create required directories: {e}"));
         process::exit(1);
     });
     logger.log(format!(
