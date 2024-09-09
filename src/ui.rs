@@ -34,7 +34,7 @@ impl UI {
             bg,
             fg,
             border,
-            bg_hover: Color::new(bg.r, bg.g, bg.b, bg.a * 0.8),
+            bg_hover: Color::new(bg.r, bg.g, bg.b, bg.a * 0.1),
             bg_click: Color::new(bg.r, bg.g, bg.b, bg.a * 1.1),
         }
     }

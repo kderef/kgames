@@ -15,6 +15,7 @@ pub struct Menu<'a> {
     logger: Logger,
     ui: UI,
     folder_icon: &'a Texture2D,
+    refresh: &'a Texture2D,
     pub show_fps: bool,
     pub error: Option<ErrorPage>,
 }
@@ -31,6 +32,7 @@ impl<'a> Menu<'a> {
             selected: None,
             error: None,
             folder_icon: texture::asset_store().get_texture("folder_open").unwrap(),
+            refresh: texture::asset_store().get_texture("search_file").unwrap(),
             ui: UI::new(
                 rgb(0.05, 0.05, 0.05),
                 rgb(0.92156863, 0.85882353, 0.69803922),
@@ -181,7 +183,7 @@ impl<'a> Menu<'a> {
         //===== Draw UI =====//
         // Folder button
         let (w, h) = (60.0, 60.0);
-        let bounds = Rect {
+        let mut bounds = Rect {
             x: screen_w - w - 10.0,
             y: 10.0,
             w,
@@ -194,6 +196,13 @@ impl<'a> Menu<'a> {
             }
         }
 
+        bounds.x -= w + 10.0;
+
+        if self.ui.button_icon(self.refresh, bounds) {
+            if let Err(e) = cross::open_folder(&self.engine.global_dir) {
+                self.logger.err(e);
+            }
+        }
         //===== Draw FPS =====//
         if self.show_fps {
             self.draw_fps();
