@@ -13,6 +13,7 @@ use miniquad::{
 use script::{Engine, ScriptDir};
 use ui::Logger;
 
+mod cross;
 mod error;
 mod ffi;
 mod menu;

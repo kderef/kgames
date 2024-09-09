@@ -1,3 +1,4 @@
+use crate::{cross, texture};
 use macroquad::prelude::*;
 use rhai::Scope;
 use std::path::PathBuf;
@@ -5,13 +6,15 @@ use std::path::PathBuf;
 use crate::{
     error::ErrorPage,
     script::{Engine, ScriptDir},
-    ui::Logger,
+    ui::{rgb, Logger, UI},
 };
 
 pub struct Menu<'a> {
     engine: Engine<'a>,
     selected: Option<usize>,
     logger: Logger,
+    ui: UI,
+    folder_icon: &'a Texture2D,
     pub show_fps: bool,
     pub error: Option<ErrorPage>,
 }
@@ -27,6 +30,12 @@ impl<'a> Menu<'a> {
             show_fps: false,
             selected: None,
             error: None,
+            folder_icon: texture::asset_store().get_texture("folder_open").unwrap(),
+            ui: UI::new(
+                rgb(0.05, 0.05, 0.05),
+                rgb(0.92156863, 0.85882353, 0.69803922),
+                rgb(0.5, 0.5, 0.5),
+            ),
         }
     }
 
@@ -142,6 +151,8 @@ impl<'a> Menu<'a> {
     }
 
     fn draw_menu(&mut self) {
+        let (screen_w, screen_h) = (screen_width(), screen_height());
+
         const BG: Color = Color::new(0.11, 0.12, 0.12, 1.0);
         clear_background(BG);
 
@@ -150,13 +161,9 @@ impl<'a> Menu<'a> {
         let title = "KGames";
         let title_size = (sw / 10.).clamp(60.0, sw);
         let title_dims = measure_text(title, None, title_size as u16, 1.0);
-        draw_text(
-            title,
-            sw / 2. - title_dims.width / 2.,
-            title_size,
-            title_size,
-            WHITE,
-        );
+        let title_pos = vec2(sw / 2. - title_dims.width / 2., title_size);
+
+        draw_text(title, title_pos.x, title_pos.y, title_size, WHITE);
 
         // Draw All the games.
         // TODO: draw games
@@ -170,6 +177,22 @@ impl<'a> Menu<'a> {
             15.0,
             GRAY,
         );
+
+        //===== Draw UI =====//
+        // Folder button
+        let (w, h) = (60.0, 60.0);
+        let bounds = Rect {
+            x: screen_w - w - 10.0,
+            y: 10.0,
+            w,
+            h,
+        };
+
+        if self.ui.button_icon(self.folder_icon, bounds) {
+            if let Err(e) = cross::open_folder(&self.engine.global_dir) {
+                self.logger.err(e);
+            }
+        }
 
         //===== Draw FPS =====//
         if self.show_fps {
