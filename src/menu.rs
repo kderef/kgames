@@ -61,6 +61,18 @@ impl<'a> Menu<'a> {
         }
     }
 
+    fn reload_scripts(&mut self) {
+        self.logger.log("### Reloading scripts");
+        let mut errors = vec![];
+        if let Err(e) = self.engine.load_scripts(
+            &mut self.logger,
+            &mut errors,
+            &[ScriptDir::Examples, ScriptDir::Scripts],
+        ) {
+            self.error = Some(ErrorPage::new(errors, e));
+        }
+    }
+
     /// Call update() of the script, and update menu state
     #[inline]
     pub fn update(&mut self) {
@@ -79,14 +91,7 @@ impl<'a> Menu<'a> {
         self.show_fps ^= is_key_pressed(KeyCode::F12);
 
         if is_key_pressed(KeyCode::F5) {
-            let mut errors = vec![];
-            if let Err(e) = self.engine.load_scripts(
-                &mut self.logger,
-                &mut errors,
-                &[ScriptDir::Examples, ScriptDir::Scripts],
-            ) {
-                self.error = Some(ErrorPage::new(errors, e));
-            }
+            self.reload_scripts();
         }
 
         if self.error.is_some() {
@@ -199,9 +204,7 @@ impl<'a> Menu<'a> {
         bounds.x -= w + 10.0;
 
         if self.ui.button_icon(self.refresh, bounds) {
-            if let Err(e) = cross::open_folder(&self.engine.global_dir) {
-                self.logger.err(e);
-            }
+            self.reload_scripts();
         }
         //===== Draw FPS =====//
         if self.show_fps {

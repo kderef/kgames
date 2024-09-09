@@ -119,15 +119,15 @@ impl<'a> Engine<'a> {
     }
 
     pub fn new() -> Self {
-        let global_dir_ = PathBuf::from(GLOBAL_DIR);
+        let home = PathBuf::from(GLOBAL_DIR);
         let engine = rhai::Engine::new();
 
         let mut s = Self {
             engine,
-            script_dir: global_dir_.join("scripts"),
-            asset_dir: global_dir_.join("assets"),
-            example_dir: global_dir_.join("examples"),
-            global_dir: global_dir_,
+            script_dir: home.join("scripts"),
+            asset_dir: home.join("assets"),
+            example_dir: home.join("examples"),
+            global_dir: home,
             scripts: vec![],
         };
 
@@ -138,14 +138,25 @@ impl<'a> Engine<'a> {
 
     /// Check if all the dirs exist, if not creating them
     pub fn ensure_dirs_exist(&self) -> anyhow::Result<()> {
-        if !self.global_dir.is_dir() || !self.script_dir.is_dir() {
-            fs::create_dir_all(&self.script_dir)?;
-        }
-        if !self.example_dir.is_dir() {
-            fs::create_dir(&self.example_dir)?;
-        }
-        if !self.asset_dir.is_dir() {
-            fs::create_dir(&self.asset_dir)?;
+        let dirs = [
+            &self.global_dir,
+            &self.script_dir,
+            &self.example_dir,
+            &self.script_dir,
+        ];
+
+        for dir in dirs {
+            if !dir.is_dir() {
+                if let Err(e) = fs::create_dir_all(dir) {
+                    match e.kind() {
+                        // Make sure
+                        io::ErrorKind::AlreadyExists => {
+                            continue;
+                        }
+                        _ => return Err(e.into()),
+                    }
+                }
+            }
         }
         Ok(())
     }
