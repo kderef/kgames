@@ -1,3 +1,4 @@
+use include_dir::{include_dir, Dir};
 use macroquad::prelude::*;
 use std::fs::{self, DirEntry};
 use std::path::PathBuf;
@@ -215,6 +216,23 @@ impl<'a> Engine<'a> {
         let path = self.global_dir.join(filename);
         fs::write(&path, README)?;
         Ok(path)
+    }
+
+    pub fn write_examples(&self) -> Result<(), Vec<std::io::Error>> {
+        static EXAMPLES: Dir = include_dir!("$CARGO_MANIFEST_DIR/res/examples");
+        let mut errors = Vec::with_capacity(EXAMPLES.files().count());
+
+        for example in EXAMPLES.files() {
+            if let Err(e) = fs::write(self.example_dir.join(example.path()), example.contents()) {
+                errors.push(e);
+            }
+        }
+
+        if errors.len() > 0 {
+            Err(errors)
+        } else {
+            Ok(())
+        }
     }
 
     /// Internal

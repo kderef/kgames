@@ -93,7 +93,15 @@ async fn main() {
     let readme = "README.txt";
     match engine.create_readme(readme) {
         Ok(created) => logger.log(&format!("Created readme '{readme}' at {created:?}")),
-        Err(e) => logger.err(&format!("Failed to create readme '{readme}': {e}")),
+        Err(e) => logger.err(format!("Failed to create readme '{readme}': {e}")),
+    }
+
+    // Write examples
+    logger.log("Writing examples...");
+    if let Err(e) = engine.write_examples() {
+        logger.err(format!(
+            "Failed to write examples due to the following errors: {e:#?}"
+        ));
     }
 
     // Try to load scripts on startup.
