@@ -1,46 +1,8 @@
-use crate::{cross, texture};
+use super::*;
+use crate::cross;
 use macroquad::prelude::*;
-use rhai::Scope;
-use std::path::PathBuf;
-
-use crate::{
-    error::ErrorPage,
-    script::{Engine, ScriptDir},
-    ui::{rgb, Logger, UI},
-};
-
-pub struct Menu<'a> {
-    engine: Engine<'a>,
-    selected: Option<usize>,
-    logger: Logger,
-    ui: UI,
-    folder_icon: &'a Texture2D,
-    refresh: &'a Texture2D,
-    pub show_fps: bool,
-    pub error: Option<ErrorPage>,
-}
-
-// File functions
-impl<'a> Menu<'a> {}
 
 impl<'a> Menu<'a> {
-    pub fn new(engine: Engine<'a>, logger: Logger) -> Self {
-        Self {
-            engine,
-            logger,
-            show_fps: false,
-            selected: None,
-            error: None,
-            folder_icon: texture::asset_store().get_texture("folder_open").unwrap(),
-            refresh: texture::asset_store().get_texture("search_file").unwrap(),
-            ui: UI::new(
-                rgb(0.05, 0.05, 0.05),
-                rgb(0.92156863, 0.85882353, 0.69803922),
-                rgb(0.5, 0.5, 0.5),
-            ),
-        }
-    }
-
     fn draw_selection(&mut self) {
         // FIXME: temporary solution
         for (i, name) in self.engine.scripts.iter().enumerate() {
@@ -57,61 +19,6 @@ impl<'a> Menu<'a> {
             if is_key_pressed(unsafe { std::mem::transmute(KeyCode::Key0 as u16 + i as u16) }) {
                 self.selected = Some(i - 1);
                 return;
-            }
-        }
-    }
-
-    fn reload_scripts(&mut self) {
-        self.logger.log("### Reloading scripts");
-        let mut errors = vec![];
-        if let Err(e) = self.engine.load_scripts(
-            &mut self.logger,
-            &mut errors,
-            &[ScriptDir::Examples, ScriptDir::Scripts],
-        ) {
-            self.error = Some(ErrorPage::new(errors, e));
-        }
-    }
-
-    /// Call update() of the script, and update menu state
-    #[inline]
-    pub fn update(&mut self) {
-        // TODO: Make it report error if script reload caused error
-
-        if is_key_pressed(KeyCode::F10) {
-            let l = &mut self.logger;
-            if l.enabled {
-                l.warn("disabling logging! Reenable with F10");
-                l.enabled = false;
-            } else {
-                l.enabled = true;
-                l.log("Enabling logging!");
-            };
-        }
-        self.show_fps ^= is_key_pressed(KeyCode::F12);
-
-        if is_key_pressed(KeyCode::F5) {
-            self.reload_scripts();
-        }
-
-        if self.error.is_some() {
-            return;
-        }
-
-        if is_key_pressed(KeyCode::Escape) {
-            self.selected = None;
-        }
-
-        if let Some(index) = self.selected {
-            let script = &mut self.engine.scripts[index];
-            let result =
-                self.engine
-                    .engine
-                    .call_fn::<()>(&mut script.scope, &script.ast, "update", ());
-
-            if let Err(e) = result {
-                self.logger
-                    .err(format!("Error while executings script -> update(): {e}"));
             }
         }
     }
@@ -196,15 +103,21 @@ impl<'a> Menu<'a> {
         };
 
         if self.ui.button_icon(self.folder_icon, bounds) {
-            if let Err(e) = cross::open_folder(&self.engine.global_dir) {
+            if let Err(e) = cross::open_path(&self.engine.global_dir) {
                 self.logger.err(e);
             }
         }
-
         bounds.x -= w + 10.0;
 
         if self.ui.button_icon(self.refresh, bounds) {
             self.reload_scripts();
+        }
+        bounds.x -= w + 10.0;
+
+        if self.ui.button_icon(self.help, bounds) {
+            if let Err(e) = cross::open_path(&self.readme) {
+                self.logger.err(e);
+            }
         }
         //===== Draw FPS =====//
         if self.show_fps {

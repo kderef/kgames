@@ -11,12 +11,6 @@ pub struct ErrorPage {
     errors: Vec<(PathBuf, anyhow::Error)>,
 }
 
-pub fn void<F: FnOnce()>(f: F) -> impl FnOnce() -> () {
-    || {
-        f();
-    }
-}
-
 fn draw_centered(text: &str, y: f32, size: f32, color: Color) {
     let dims = measure_text(text, None, size as u16, 1.0);
     let screen_width = screen_width();

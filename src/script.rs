@@ -95,10 +95,58 @@ impl<'a> Engine<'a> {
             .register_fn("msgbox", |title: ImmutableString, msg: ImmutableString| {
                 let _ = msgbox::create(title.as_str(), msg.as_str(), msgbox::IconType::Info);
             })
+            .register_fn("overlaps", Rect::overlaps)
+            .register_fn("overlaps", |a: Rect, b: Rect| a.overlaps(&b))
             .register_fn("texture", draw_texture)
             .register_fn("texture", draw_texture_stored)
+            .register_fn(
+                "texture_ex",
+                |t: &Texture2D, x: f32, y: f32, tint: Color, dest_size: Vec2, rotation: f32| {
+                    draw_texture_ex(
+                        t,
+                        x,
+                        y,
+                        tint,
+                        DrawTextureParams {
+                            dest_size: Some(dest_size),
+                            source: None,
+                            rotation,
+                            flip_x: false,
+                            flip_y: false,
+                            pivot: None,
+                        },
+                    )
+                },
+            )
+            .register_fn(
+                "texture_pro",
+                |t: &Texture2D,
+                 x: f32,
+                 y: f32,
+                 tint: Color,
+                 dest_size: Vec2,
+                 source: Rect,
+                 rotation: f32,
+                 pivot: Vec2| {
+                    draw_texture_ex(
+                        t,
+                        x,
+                        y,
+                        tint,
+                        DrawTextureParams {
+                            dest_size: Some(dest_size),
+                            source: Some(source),
+                            rotation,
+                            flip_x: false,
+                            flip_y: false,
+                            pivot: Some(pivot),
+                        },
+                    )
+                },
+            )
             // textures
             .register_fn("load_texture", load_texture_sync)
+            .register_fn("get_texture", load_texture_stored)
             // Information
             .register_fn("deltatime", get_frame_time)
             .register_fn("screen_width", screen_width)
@@ -239,6 +287,7 @@ impl<'a> Engine<'a> {
 
             // Add new script
             logger.log(format!("Adding new script {path:?}"));
+
             let contents = match fs::read_to_string(&path) {
                 Ok(c) => c,
                 Err(e) => {
@@ -246,6 +295,12 @@ impl<'a> Engine<'a> {
                     continue;
                 }
             };
+
+            // *** Compile script! *** //
+
+            // Disable optimizations
+            self.engine
+                .set_optimization_level(rhai::OptimizationLevel::None);
             let ast = match self.engine.compile(contents) {
                 Ok(a) => a,
                 Err(e) => {
@@ -254,10 +309,26 @@ impl<'a> Engine<'a> {
                 }
             };
 
-            // Create script
+            // Create and populate scope
             let mut scope = Scope::new();
             populate_scope(&mut scope);
+            ast.iter_literal_variables(true, true)
+                .for_each(|(name, is_const, val)| {
+                    if is_const {
+                        scope.push_constant(name, val);
+                    } else {
+                        scope.push_dynamic(name, val);
+                    }
+                });
 
+            // Enable optimizations
+            self.engine
+                .set_optimization_level(rhai::OptimizationLevel::Simple);
+            let ast = self
+                .engine
+                .optimize_ast(&scope, ast, self.engine.optimization_level());
+
+            // Create script
             let mut script = Script {
                 ast,
                 modified,

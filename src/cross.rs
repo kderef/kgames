@@ -3,17 +3,17 @@
 use std::path::Path;
 use std::process::Command;
 
-pub fn open_folder(p: impl AsRef<Path>) -> anyhow::Result<()> {
-    const CMD: &str = if cfg!(target_os = "windows") {
-        "explorer"
+pub fn open_path(p: impl AsRef<Path>) -> anyhow::Result<()> {
+    let (cmd, args): (&str, &[&str]) = if cfg!(target_os = "windows") {
+        ("cmd.exe", &["/C", "start"])
     } else if cfg!(target_os = "macos") {
-        "open"
+        ("open", &[])
     } else if cfg!(target_os = "linux") {
-        "xdg-open"
+        ("xdg-open", &[])
     } else {
         unimplemented!()
     };
 
-    Command::new(CMD).arg(p.as_ref()).spawn()?;
+    Command::new(cmd).args(args).arg(p.as_ref()).spawn()?;
     Ok(())
 }

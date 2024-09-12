@@ -1,6 +1,7 @@
 // #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use colored::Colorize;
+use std::env;
 use std::process;
 
 use error::ErrorPage;
@@ -65,7 +66,6 @@ async fn main() {
     );
     println!("=========================");
 
-    // Initialize
     let mut logger = Logger::new(true);
     let mut engine = Engine::new();
 
@@ -82,7 +82,7 @@ async fn main() {
     ));
 
     // Create readme
-    let readme = "README.md";
+    let readme = "README.txt";
     match engine.create_readme(readme) {
         Ok(created) => logger.log(&format!("Created readme '{readme}' at {created:?}")),
         Err(e) => logger.err(&format!("Failed to create readme '{readme}': {e}")),
@@ -105,20 +105,23 @@ async fn main() {
     // Report script count
     let scripts_count = engine.scripts.len();
     if scripts_count == 0 {
-        logger.log(&format!(
+        logger.log(format!(
             "WARNING: No scripts ending in .rhai found in {:?}!",
             engine.script_dir
         ));
     } else {
-        logger.log(&format!("Loaded {scripts_count} scripts!"));
+        logger.log(format!("Loaded {scripts_count} scripts!"));
     }
 
     // Info messages
+    println!();
+    logger.note("Scripts     can be reloaded           with F5");
     logger.note("logging     can be disabled / toggled with F10");
-    logger.note("FPS counter can be enabled  / toggled with F12\n");
+    logger.note("FPS counter can be enabled  / toggled with F12");
+    println!();
 
     // Watch for script changes
-    let mut menu = Menu::new(engine, logger);
+    let mut menu = Menu::new(engine, logger, readme);
     menu.error = start_error;
 
     loop {

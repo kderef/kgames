@@ -73,7 +73,7 @@ reg_type! {
 
 // Constants
 
-pub const COLORS: [(&'static str, Color); 25] = [
+pub const COLORS: [(&'static str, Color); 26] = [
     ("LIGHTGRAY", LIGHTGRAY),
     ("GRAY", GRAY),
     ("DARKGRAY", DARKGRAY),
@@ -99,6 +99,8 @@ pub const COLORS: [(&'static str, Color); 25] = [
     ("BLACK", BLACK),
     ("BLANK", BLANK),
     ("MAGENTA", MAGENTA),
+    // Custom
+    ("WIN98_BG", Color::new(0.0, 0.50196078, 0.50196078, 1.0)),
 ];
 
 pub const KEYS: [(&'static str, KeyCode); 121] = [

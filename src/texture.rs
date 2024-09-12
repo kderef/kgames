@@ -42,13 +42,21 @@ impl AssetStore {
                 "no": Png = "sys/no.png",
                 "warning": Png = "sys/warning.png",
                 "search_file": Png = "sys/search_file.png",
+                "help_book": Png = "sys/help_book.png",
 
                 "brick": Png = "PixelTexPack/Bricks/CLAYBRICKS.png"
             },
         };
 
         // Set pixelated textures to nearest
-        for name in ["folder_open", "yes", "no", "warning", "search_file"] {
+        for name in [
+            "folder_open",
+            "yes",
+            "no",
+            "warning",
+            "search_file",
+            "help_book",
+        ] {
             s.builtin_textures
                 .get_mut(name)
                 .unwrap()
