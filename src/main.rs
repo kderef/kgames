@@ -3,6 +3,7 @@
 use colored::Colorize;
 use std::env;
 use std::process;
+use std::process::ExitStatus;
 
 use error::ErrorPage;
 use macroquad::prelude::*;
@@ -54,6 +55,13 @@ fn window() -> Conf {
 
 #[macroquad::main(window)]
 async fn main() {
+    #[cfg(target_os = "windows")]
+    match process::Command::new("cmd").args(["/C", "cls"]).status() {
+        Err(e) => eprintln!("ERROR: failed to clear screen: error = {e}"),
+        Ok(s) if !s.success() => eprintln!("ERROR: failed to clear screen: code = {s}"),
+        _ => {}
+    }
+
     println!(
         "{name} {ver} {version}",
         name = env!("CARGO_PKG_NAME").bold(),

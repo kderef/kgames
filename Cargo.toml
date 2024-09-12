@@ -1,6 +1,6 @@
 [package]
 name = "kgames"
-version = "0.1.2"
+version = "0.1.21"
 edition = "2021"
 build = "build.rs"
 repository = "https://github.com/kderef/kgames"
