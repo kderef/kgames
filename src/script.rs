@@ -218,11 +218,19 @@ impl<'a> Engine<'a> {
         Ok(path)
     }
 
-    pub fn write_examples(&self) -> Result<(), Vec<std::io::Error>> {
+    pub fn write_examples(&self, warnings: &mut Vec<String>) -> Result<(), Vec<std::io::Error>> {
         static EXAMPLES: Dir = include_dir!("$CARGO_MANIFEST_DIR/res/examples");
+
         let mut errors = Vec::with_capacity(EXAMPLES.files().count());
 
         for example in EXAMPLES.files() {
+            let write_path = self.example_dir.join(example.path());
+
+            if write_path.is_file() {
+                warnings.push(format!("File {write_path:?} already exists. To overwrite the example, rename or delete it."));
+                continue;
+            }
+
             if let Err(e) = fs::write(self.example_dir.join(example.path()), example.contents()) {
                 errors.push(e);
             }

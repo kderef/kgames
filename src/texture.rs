@@ -38,6 +38,8 @@ impl AssetStore {
             user_textures: HashMap::new(),
             builtin_textures: textures! {
                 "folder_open": Png = "sys/folder_open.png",
+                "folder_open_file": Png = "sys/folder_open_file.png",
+
                 "yes": Png = "sys/yes.png",
                 "no": Png = "sys/no.png",
                 "warning": Png = "sys/warning.png",

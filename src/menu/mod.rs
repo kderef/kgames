@@ -35,7 +35,7 @@ impl<'a> Menu<'a> {
             selected: None,
             error: None,
             // Icons
-            folder_icon: asset_store().get_texture("folder_open").unwrap(),
+            folder_icon: asset_store().get_texture("folder_open_file").unwrap(),
             refresh: asset_store().get_texture("search_file").unwrap(),
             help: asset_store().get_texture("help_book").unwrap(),
             // Files

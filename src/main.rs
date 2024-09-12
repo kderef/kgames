@@ -25,6 +25,7 @@ mod ui;
 
 #[cfg(not(target_os = "macos"))]
 fn window_icon() -> Icon {
+    // TODO: Add an icon from memory
     const BLACK: u8 = 0;
 
     Icon {
@@ -97,11 +98,18 @@ async fn main() {
     }
 
     // Write examples
+    let mut warnings = vec![];
     logger.log("Writing examples...");
-    if let Err(e) = engine.write_examples() {
+    if let Err(e) = engine.write_examples(&mut warnings) {
         logger.err(format!(
             "Failed to write examples due to the following errors: {e:#?}"
         ));
+    }
+    if warnings.len() > 0 {
+        logger.warn("Encountered the following warnings:");
+        for warning in warnings {
+            logger.warn(format!(" - {warning}"));
+        }
     }
 
     // Try to load scripts on startup.
