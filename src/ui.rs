@@ -127,3 +127,40 @@ impl Logger {
         println!("{warning} {text}");
     }
 }
+
+// Dialog system
+pub enum DialogOption {
+    Yes,
+    No,
+    Ok,
+    Cancel,
+}
+
+pub struct Dialog<'a> {
+    title: &'a str,
+    message: &'a str,
+    options: &'a [DialogOption],
+}
+
+impl<'a> Dialog<'a> {
+    pub fn new(title: &'a str, msg: &'a str, options: &'a [DialogOption]) -> Self {
+        Self {
+            title,
+            message: msg,
+            options,
+        }
+    }
+    pub fn draw(&self, ui: &UI) -> Option<DialogOption> {
+        let (screen_w, screen_h) = (screen_width(), screen_height());
+
+        let font_size = 30.0;
+        let (w, h) = (400.0, 200.0);
+        let (x, y) = ((screen_w - w) / 2., (screen_h - h) / 2.);
+
+        draw_rectangle(x, y, w, h, ui.bg);
+        draw_rectangle(x, y, w, font_size, ui.bg_click);
+        draw_rectangle_lines(x, y, w, h, 1.0, ui.border);
+
+        None
+    }
+}

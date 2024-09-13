@@ -40,21 +40,27 @@ impl<'a> Menu<'a> {
             return;
         }
 
-        if is_key_pressed(KeyCode::Escape) {
-            self.selected = None;
+        match self.state {
+            State::Playing(game) => {
+                let script = &mut self.engine.scripts[game];
+                let result =
+                    self.engine
+                        .engine
+                        .call_fn::<()>(&mut script.scope, &script.ast, "update", ());
+
+                if let Err(e) = result {
+                    self.logger
+                        .err(format!("Error while executings script -> update(): {e}"));
+                }
+            }
+            State::Settings => {}
+            State::Menu => {}
+            State::Games => {}
         }
 
-        if let Some(index) = self.selected {
-            let script = &mut self.engine.scripts[index];
-            let result =
-                self.engine
-                    .engine
-                    .call_fn::<()>(&mut script.scope, &script.ast, "update", ());
-
-            if let Err(e) = result {
-                self.logger
-                    .err(format!("Error while executings script -> update(): {e}"));
-            }
+        if is_key_pressed(KeyCode::Escape) {
+            self.state = State::Menu;
+            self.dialog = None;
         }
     }
 }

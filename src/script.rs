@@ -1,7 +1,7 @@
 use include_dir::{include_dir, Dir};
 use macroquad::prelude::*;
 use std::fs::{self, DirEntry};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use std::{ffi::OsStr, io};
 
@@ -291,7 +291,6 @@ impl<'a> Engine<'a> {
             if let Some(existing) = self.scripts.iter_mut().find(|s| s.path == path) {
                 if existing.modified != modified {
                     existing.modified = modified;
-                    existing.ast = self.engine.compile(fs::read_to_string(&path)?)?;
 
                     let contents = match fs::read_to_string(&path) {
                         Ok(c) => c,
@@ -300,6 +299,7 @@ impl<'a> Engine<'a> {
                             continue;
                         }
                     };
+
                     existing.ast = match self.engine.compile(contents) {
                         Ok(a) => a,
                         Err(e) => {
@@ -307,6 +307,16 @@ impl<'a> Engine<'a> {
                             continue;
                         }
                     };
+                    populate_scope(&mut existing.scope);
+                    existing.ast.iter_literal_variables(true, true).for_each(
+                        |(name, is_const, val)| {
+                            if is_const {
+                                existing.scope.push_constant(name, val);
+                            } else {
+                                existing.scope.push_dynamic(name, val);
+                            }
+                        },
+                    );
                 }
                 continue;
             }

@@ -1,6 +1,7 @@
 // #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use colored::Colorize;
+use cross::cmd;
 use std::env;
 use std::process;
 use std::process::ExitStatus;
@@ -57,7 +58,7 @@ fn window() -> Conf {
 #[macroquad::main(window)]
 async fn main() {
     #[cfg(target_os = "windows")]
-    match process::Command::new("cmd").args(["/C", "cls"]).status() {
+    match cmd("cmd", ["/C", "cls"]) {
         Err(e) => eprintln!("ERROR: failed to clear screen: error = {e}"),
         Ok(s) if !s.success() => eprintln!("ERROR: failed to clear screen: code = {s}"),
         _ => {}
@@ -106,7 +107,7 @@ async fn main() {
         ));
     }
     if warnings.len() > 0 {
-        logger.warn("Encountered the following warnings:");
+        logger.warn("Encountered the following warnings while writing examples:");
         for warning in warnings {
             logger.warn(format!(" - {warning}"));
         }

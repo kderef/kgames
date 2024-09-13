@@ -1,9 +1,11 @@
 use super::*;
-use crate::cross;
+use crate::{cross, ui::DialogOption};
 use macroquad::prelude::*;
+use miniquad::window::request_quit;
 
 impl<'a> Menu<'a> {
-    fn draw_selection(&mut self) {
+    #[allow(unused)]
+    fn draw_ui_temp(&mut self, y: f32) {
         // FIXME: temporary solution
         for (i, name) in self.engine.scripts.iter().enumerate() {
             let i = i + 1;
@@ -17,9 +19,46 @@ impl<'a> Menu<'a> {
                 WHITE,
             );
             if is_key_pressed(unsafe { std::mem::transmute(KeyCode::Key0 as u16 + i as u16) }) {
-                self.selected = Some(i - 1);
+                self.state = State::Playing(i - 1);
                 return;
             }
+        }
+    }
+
+    fn draw_ui(&mut self, y: f32) {
+        let (screen_w, screen_h) = (screen_width(), screen_height());
+
+        // draw buttons
+        let button_width = (screen_w / 3.0).clamp(100.0, 300.0);
+        let button_height = 50.0;
+        let font_size = 30.0;
+
+        let mut button_bounds = Rect {
+            x: (screen_w - button_width) / 2.,
+            y: (screen_h / 2.) - button_height * 3.0,
+            w: button_width,
+            h: button_height,
+        };
+
+        let spacing = 10.0;
+
+        let mut button = |text: &str| {
+            button_bounds.y += button_bounds.h + spacing;
+            self.ui.button(text, button_bounds, font_size)
+        };
+
+        if button("Play") {
+            self.state = State::Games;
+        }
+        if button("Settings") {
+            self.state = State::Settings;
+        }
+        if button("Exit") {
+            self.dialog = Some(Dialog::new(
+                "Exit",
+                "Do you really want to exit?",
+                &[DialogOption::Yes, DialogOption::No],
+            ));
         }
     }
 
@@ -43,45 +82,63 @@ impl<'a> Menu<'a> {
             return;
         }
 
-        if let Some(index) = self.selected {
-            let script = &mut self.engine.scripts[index];
-            let result =
-                self.engine
-                    .engine
-                    .call_fn::<()>(&mut script.scope, &script.ast, "draw", ());
+        let (screen_w, screen_h) = (screen_width(), screen_height());
 
-            if let Err(e) = result {
-                self.logger
-                    .err(format!("Error while executings script: {e}"));
+        match self.state {
+            State::Playing(game) => {
+                let script = &mut self.engine.scripts[game];
+                let result =
+                    self.engine
+                        .engine
+                        .call_fn::<()>(&mut script.scope, &script.ast, "draw", ());
+
+                if let Err(e) = result {
+                    self.logger
+                        .err(format!("Error while executings script: {e}"));
+                }
+
+                if self.logger.enabled {
+                    self.draw_fps();
+                }
+
+                return;
             }
-
-            if self.logger.enabled {
-                self.draw_fps();
+            State::Menu => {
+                self.draw_menu();
             }
-
-            return;
+            State::Settings => {
+                self.draw_settings();
+            }
+            State::Games => {
+                self.draw_games();
+            }
         }
-        self.draw_menu();
+
+        // Draw dialog
+        if let Some(ref dialog) = self.dialog {
+            const OVERLAY: Color = Color::new(0., 0., 0., 0.4);
+            draw_rectangle(0., 0., screen_w, screen_h, OVERLAY);
+
+            dialog.draw(&self.ui);
+        }
     }
 
     fn draw_menu(&mut self) {
         let (screen_w, screen_h) = (screen_width(), screen_height());
 
-        const BG: Color = Color::new(0.11, 0.12, 0.12, 1.0);
-        clear_background(BG);
+        clear_background(self.background);
 
         // Draw the Title
         let (sw, sh) = (screen_width(), screen_height());
         let title = "KGames";
-        let title_size = (sw / 10.).clamp(60.0, sw);
+        let title_size = (sw / 10.).clamp(40.0, 105.0);
         let title_dims = measure_text(title, None, title_size as u16, 1.0);
         let title_pos = vec2(sw / 2. - title_dims.width / 2., title_size);
 
         draw_text(title, title_pos.x, title_pos.y, title_size, WHITE);
 
-        // Draw All the games.
-        // TODO: draw games
-        self.draw_selection();
+        // Draw UI
+        self.draw_ui(title_pos.y + 20.0);
 
         // Draw small subtext
         draw_text(
