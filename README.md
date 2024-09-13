@@ -6,6 +6,7 @@ The goal is to create a scripting engine for making your own games.
 This is to be achieved by exposing a few [macroquad](https://macroquad.rs) functions through [Rhai script](https://thai.red).
 and allowing the user to look through the detected scripts in a graphical menu.
 
+---
 ### Getting Started  
 
 Install or build the executable, then run it once to create the neccesessary directories.  
@@ -14,8 +15,8 @@ You should now see that a folder called **kgames** has been created, with the fo
 - scripts/:   The folder containing all the user-made scripts
 - examples/:  The folder containing builtin examples, these can be modified(!)
 
-
-#### THE RHAI LANGUAGE
+---
+### THE RHAI LANGUAGE
 **Links:**
 - https://www.rhai.rs
 - https://www.rhai.rs/book/
