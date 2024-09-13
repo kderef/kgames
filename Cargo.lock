@@ -728,7 +728,7 @@ dependencies = [
 
 [[package]]
 name = "kgames"
-version = "0.1.21"
+version = "0.1.3"
 dependencies = [
  "anyhow",
  "colored",

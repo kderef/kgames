@@ -44,7 +44,7 @@ impl<'a> Menu<'a> {
 
         let mut button = |text: &str| {
             button_bounds.y += button_bounds.h + spacing;
-            self.ui.button(text, button_bounds, font_size)
+            self.ui.button(text, button_bounds, font_size) && self.dialog.is_none()
         };
 
         if button("Play") {
@@ -53,6 +53,10 @@ impl<'a> Menu<'a> {
         if button("Settings") {
             self.state = State::Settings;
         }
+        if button("Credits") {
+            // TODO
+        }
+
         if button("Exit") {
             self.dialog = Some(Dialog::new(
                 "Exit",
@@ -119,7 +123,17 @@ impl<'a> Menu<'a> {
             const OVERLAY: Color = Color::new(0., 0., 0., 0.4);
             draw_rectangle(0., 0., screen_w, screen_h, OVERLAY);
 
-            dialog.draw(&self.ui);
+            match dialog.show(&self.ui) {
+                Some(DialogOption::Yes) => {
+                    self.logger.log("User requested quit. Exiting...");
+                    request_quit();
+                }
+                // No
+                Some(_) => {
+                    self.dialog = None;
+                }
+                None => {}
+            }
         }
     }
 
