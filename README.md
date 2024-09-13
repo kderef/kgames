@@ -15,6 +15,12 @@ You should now see that a folder called **kgames** has been created, with the fo
 - scripts/:   The folder containing all the user-made scripts
 - examples/:  The folder containing builtin examples, these can be modified(!)
 
+Then you can take a look at all the examples in the **kgames/examples/** folder.
+After modifying the examples, you can either press the **refresh button** in the top right (*The one with the magnifying glass*),
+or, you can press the **F5 Key** to reload all the scripts.
+
+***NOTE:*** Sometimes your script may cause an error, please observe the error screen and the **logs in the console window.**
+
 ---
 ### THE RHAI LANGUAGE
 **Links:**
