@@ -16,7 +16,6 @@ You should now see that a folder called **kgames** has been created, with the fo
 
 
 #### THE RHAI LANGUAGE
-=================
 **Links:**
 - https://www.rhai.rs
 - https://www.rhai.rs/book/
