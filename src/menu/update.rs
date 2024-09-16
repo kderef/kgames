@@ -2,6 +2,7 @@ use super::*;
 use crate::error::ErrorPage;
 use crate::script::*;
 use macroquad::prelude::*;
+use miniquad::window::{dropped_file_bytes, dropped_file_count, dropped_file_path};
 
 impl<'a> Menu<'a> {
     pub fn reload_scripts(&mut self) {

@@ -10,8 +10,33 @@ use crate::ui::rgb;
 use crate::ui::Logger;
 use crate::ui::{Dialog, UI};
 use macroquad::prelude::*;
+use miniquad::window::dropped_file_bytes;
+use miniquad::window::dropped_file_count;
+use miniquad::window::dropped_file_path;
 use std::path::Path;
 use std::path::PathBuf;
+
+#[allow(unused)]
+pub struct DroppedFile {
+    path: PathBuf,
+    contents: Vec<u8>,
+}
+#[allow(unused)]
+impl DroppedFile {
+    pub fn gather() -> Vec<Self> {
+        let dropped_count = dropped_file_count();
+        let mut dropped = Vec::with_capacity(dropped_count);
+
+        for i in 0..dropped_count {
+            dropped.push(Self {
+                path: dropped_file_path(i).unwrap(),
+                contents: dropped_file_bytes(i).unwrap(),
+            });
+        }
+
+        dropped
+    }
+}
 
 pub enum State {
     Menu,

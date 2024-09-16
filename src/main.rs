@@ -2,6 +2,7 @@
 
 use colored::Colorize;
 use cross::cmd;
+use miniquad::window::dropped_file_bytes;
 use std::env;
 use std::process;
 use std::process::ExitStatus;

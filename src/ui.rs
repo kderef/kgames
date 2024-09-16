@@ -1,7 +1,8 @@
 use std::fmt::Display;
 
 use colored::Colorize;
-use macroquad::prelude::*;
+use macroquad::ui::root_ui;
+use macroquad::{prelude::*, ui::Skin};
 
 pub const fn rgb(r: f32, g: f32, b: f32) -> Color {
     Color { r, g, b, a: 1. }
@@ -91,6 +92,44 @@ impl UI {
         draw_text(text, pos.x, pos.y, font_size, self.fg);
 
         clicked
+    }
+
+    pub fn skin(&self) -> Skin {
+        let Self {
+            bg,
+            fg,
+            bg_hover,
+            bg_click,
+            border,
+        } = self;
+
+        let mut base = root_ui()
+            .style_builder()
+            .text_color(*fg)
+            .color(*bg)
+            .color_hovered(*bg_hover)
+            .color_clicked(*bg_click)
+            .font_size(30)
+            .build();
+
+        Skin {
+            // label_style: default,
+            // button_style: default,
+            // tabbar_style: default,
+            // combobox_style: default,
+            // window_style: default,
+            // editbox_style: default,
+            // window_titlebar_style: default,
+            // scrollbar_style: default,
+            // scrollbar_handle_style: default,
+            // checkbox_style: default,
+            // group_style: default,
+            // margin: default,
+            // title_height: default,
+            // scroll_width: default,
+            // scroll_multiplier: default,
+            ..root_ui().default_skin()
+        }
     }
 }
 

@@ -21,7 +21,8 @@ panic = "abort"
 anyhow = "1.0.86"
 colored = "2.1.0"
 include_dir = "0.7.4"
-macroquad = {version = "0.4.8", features = ["audio"]}
+macroquad = {version = "0.4.11", features = ["audio"]}
+# UI
 msgbox = "0.7.0"
 
 [dependencies.futures]
