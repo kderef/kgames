@@ -69,7 +69,7 @@ pub struct Menu<'a> {
 
     // Fzf
     matcher: SkimMatcherV2,
-    matches: Option<Vec<usize>>,
+    matches: Vec<usize>,
 
     pub show_fps: bool,
     pub error: Option<ErrorPage>,
@@ -96,7 +96,7 @@ impl<'a> Menu<'a> {
 
             // Fzf
             matcher: SkimMatcherV2::default(),
-            matches: None,
+            matches: vec![],
 
             ui: {
                 let mut ui = UI::new(

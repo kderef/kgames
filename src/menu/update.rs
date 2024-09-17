@@ -1,6 +1,6 @@
 use super::*;
-use crate::error::ErrorPage;
 use crate::script::*;
+use crate::{cross::fuzzy_search, error::ErrorPage};
 use macroquad::prelude::*;
 use miniquad::window::{dropped_file_bytes, dropped_file_count, dropped_file_path};
 
@@ -40,8 +40,22 @@ impl<'a> Menu<'a> {
                     self.show_fps ^= true;
                 }
                 _ => {
-                    // TODO: make list-by-query stored
-                    self.key_entered = true;
+                    let needle = &self.ui.query;
+
+                    if !needle.is_empty() {
+                        // A Key was entered into the search bar
+                        let haystack = self.engine.scripts.iter().map(|s| s.name());
+
+                        let min_score = 20;
+
+                        self.matches = fuzzy_search(&self.matcher, needle, haystack, min_score);
+                        self.logger.log(format!(
+                            "Fuzzy search '{needle}' with min_score = {min_score} returned {:#?}",
+                            self.matches
+                        ));
+
+                        self.key_entered = true;
+                    }
                 }
             }
         }

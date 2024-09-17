@@ -31,6 +31,6 @@ impl<'a> Menu<'a> {
 
         root_ui().push_skin(&skin);
         // root_ui().button(vec2(400.0, 200.0), "Hello");
-        // root_ui().input_text(hash!(), "Search ...", &mut self.ui.query);
+        root_ui().input_text(hash!(), "Search ...", &mut self.ui.query);
     }
 }
