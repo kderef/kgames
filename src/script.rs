@@ -8,7 +8,7 @@ use std::{ffi::OsStr, io};
 use crate::{ffi::*, reg_type, texture::asset_store};
 use rhai::{EvalAltResult, ImmutableString, Scope, AST};
 
-use crate::ui::Logger;
+use crate::menu::Console;
 
 pub const GLOBAL_DIR: &str = env!("CARGO_PKG_NAME");
 
@@ -267,7 +267,7 @@ impl<'a> Engine<'a> {
     /// Internal
     fn load_scripts_from_dir(
         &mut self,
-        logger: &mut Logger,
+        console: &mut Console,
         errors: &mut Vec<(PathBuf, anyhow::Error)>,
         scripts: impl Iterator<Item = io::Result<DirEntry>>,
     ) -> anyhow::Result<()> {
@@ -276,7 +276,7 @@ impl<'a> Engine<'a> {
 
         for file in scripts {
             if let Err(e) = file {
-                logger.log(format!("Skipping file: {e}"));
+                console.log(format!("Skipping file: {e}"));
                 continue;
             }
 
@@ -285,11 +285,11 @@ impl<'a> Engine<'a> {
 
             match path.extension() {
                 None => {
-                    logger.log(format!("Skipping file with no extension: {path:?}"));
+                    console.log(format!("Skipping file with no extension: {path:?}"));
                     continue;
                 }
                 Some(e) if e != ext => {
-                    logger.log(format!(
+                    console.log(format!(
                         "Skipping file with unknown(not .rhai) extension: {path:?}"
                     ));
                     continue;
@@ -334,7 +334,7 @@ impl<'a> Engine<'a> {
             }
 
             // Add new script
-            logger.log(format!("Adding new script {path:?}"));
+            console.log(format!("Adding new script {path:?}"));
 
             let contents = match fs::read_to_string(&path) {
                 Ok(c) => c,
@@ -390,7 +390,7 @@ impl<'a> Engine<'a> {
     /// Load scripts from `from`, in order.
     pub fn load_scripts(
         &mut self,
-        logger: &mut Logger,
+        console: &mut Console,
         errors: &mut Vec<(PathBuf, anyhow::Error)>,
         from: &[ScriptDir],
     ) -> anyhow::Result<()> {
@@ -401,16 +401,16 @@ impl<'a> Engine<'a> {
                 ScriptDir::Examples => &self.example_dir,
             };
 
-            logger.log(format!("==> Loading scripts from {src:?}"));
+            console.log(format!("==> Loading scripts from {src:?}"));
 
             match fs::read_dir(src) {
                 Ok(scripts) => {
-                    if let Err(e) = self.load_scripts_from_dir(logger, errors, scripts) {
+                    if let Err(e) = self.load_scripts_from_dir(console, errors, scripts) {
                         result = Err(e);
                     }
                 }
                 Err(e) => {
-                    logger.err(format!("Failed to read dir {src:?}: {e}"));
+                    console.err(format!("Failed to read dir {src:?}: {e}"));
                     result = Err(e.into());
                 }
             }

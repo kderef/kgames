@@ -2,6 +2,7 @@ use macroquad::prelude::*;
 use std::path::PathBuf;
 
 use crate::{
+    menu::Console,
     script::{Engine, ScriptDir},
     ui::Logger,
 };
@@ -84,7 +85,7 @@ impl ErrorPage {
     }
 
     /// Returns if should keep showing
-    pub fn show(&mut self, engine: &mut Engine, logger: &mut Logger) -> bool {
+    pub fn show(&mut self, engine: &mut Engine, console: &mut Console) -> bool {
         let bg = Color::new(0.7, 0., 0., 1.);
         clear_background(bg);
 
@@ -120,7 +121,7 @@ impl ErrorPage {
         if is_key_pressed(KeyCode::F5) {
             self.errors.clear();
             if let Err(e) = engine.load_scripts(
-                logger,
+                console,
                 &mut self.errors,
                 &[ScriptDir::Examples, ScriptDir::Scripts],
             ) {

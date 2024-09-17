@@ -68,6 +68,10 @@ impl<'a> Dialog<'a> {
             bounds.x += button_width + spacing;
         }
 
-        chosen
+        if ui.active {
+            chosen
+        } else {
+            None
+        }
     }
 }

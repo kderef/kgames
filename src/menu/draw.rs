@@ -80,7 +80,7 @@ impl<'a> Menu<'a> {
     #[inline]
     pub fn draw(&mut self) {
         if let Some(ref mut err) = self.error {
-            if !err.show(&mut self.engine, &mut self.logger) {
+            if !err.show(&mut self.engine, &mut self.console) {
                 self.error = None;
             }
             return;
@@ -97,12 +97,8 @@ impl<'a> Menu<'a> {
                         .call_fn::<()>(&mut script.scope, &script.ast, "draw", ());
 
                 if let Err(e) = result {
-                    self.logger
+                    self.console
                         .err(format!("Error while executings script: {e}"));
-                }
-
-                if self.logger.enabled {
-                    self.draw_fps();
                 }
 
                 return;
@@ -118,14 +114,14 @@ impl<'a> Menu<'a> {
             }
         }
 
+        const OVERLAY: Color = Color::new(0., 0., 0., 0.4);
         // Draw dialog
         if let Some(ref dialog) = self.dialog {
-            const OVERLAY: Color = Color::new(0., 0., 0., 0.4);
             draw_rectangle(0., 0., screen_w, screen_h, OVERLAY);
 
             match dialog.show(&self.ui) {
                 Some(DialogOption::Yes) => {
-                    self.logger.log("User requested quit. Exiting...");
+                    self.console.log("User requested quit. Exiting...");
                     request_quit();
                 }
                 // No
@@ -134,6 +130,10 @@ impl<'a> Menu<'a> {
                 }
                 None => {}
             }
+        }
+
+        if self.console.is_open() {
+            draw_rectangle(0., 0., screen_w, screen_h, OVERLAY);
         }
     }
 
@@ -175,7 +175,7 @@ impl<'a> Menu<'a> {
 
         if self.ui.button_icon(self.folder_icon, bounds) {
             if let Err(e) = cross::open_path(&self.engine.global_dir) {
-                self.logger.err(e);
+                self.console.err(e);
             }
         }
         bounds.x -= w + 10.0;
@@ -187,9 +187,10 @@ impl<'a> Menu<'a> {
 
         if self.ui.button_icon(self.help, bounds) {
             if let Err(e) = cross::open_path(&self.readme) {
-                self.logger.err(e);
+                self.console.err(e);
             }
         }
+
         //===== Draw FPS =====//
         if self.show_fps {
             self.draw_fps();

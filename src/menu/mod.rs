@@ -1,7 +1,10 @@
+mod console;
 mod draw;
 mod games;
 mod settings;
 mod update;
+
+pub use console::Console;
 
 use crate::error::ErrorPage;
 use crate::script::Engine;
@@ -9,6 +12,7 @@ use crate::texture::*;
 use crate::ui::rgb;
 use crate::ui::Logger;
 use crate::ui::{Dialog, UI};
+use console::*;
 use macroquad::prelude::*;
 use miniquad::window::dropped_file_bytes;
 use miniquad::window::dropped_file_count;
@@ -17,7 +21,7 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use fuzzy_matcher::skim::SkimMatcherV2;
-use fuzzy_matcher::FuzzyMatcher;
+// use fuzzy_matcher::FuzzyMatcher;
 
 #[allow(unused)]
 pub struct DroppedFile {
@@ -50,8 +54,11 @@ pub enum State {
 
 pub struct Menu<'a> {
     engine: Engine<'a>,
-    logger: Logger,
     ui: UI,
+
+    // Console
+    console: Console,
+    cvars: Cvars,
 
     // Icons
     background: Color,
@@ -76,11 +83,15 @@ pub struct Menu<'a> {
 }
 
 impl<'a> Menu<'a> {
-    pub fn new(engine: Engine<'a>, logger: Logger, readme_name: impl AsRef<Path>) -> Self {
+    pub fn new(engine: Engine<'a>, console: Console, readme_name: impl AsRef<Path>) -> Self {
         Self {
-            logger,
             show_fps: false,
             error: None,
+
+            // Console
+            console,
+            cvars: Cvars::default(),
+
             // Icons
             background: rgb(0.11, 0.12, 0.12),
             folder_icon: asset_store().get_texture("folder_open_file").unwrap(),

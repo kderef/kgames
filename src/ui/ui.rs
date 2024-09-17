@@ -14,6 +14,7 @@ pub struct UI {
     pub bg_click: Color,
     pub font: Font,
     pub query: String,
+    pub active: bool,
 }
 
 impl Default for UI {
@@ -31,6 +32,7 @@ impl Default for UI {
                 f
             },
             query: String::new(),
+            active: true,
         }
     }
 }
@@ -51,7 +53,9 @@ impl UI {
         let mouse_hov = bounds.contains(mouse_pos);
         let mouse_clk = mouse_hov && is_mouse_button_pressed(MouseButton::Left);
 
-        let color = if mouse_clk {
+        let color = if !self.active {
+            self.bg
+        } else if mouse_clk {
             self.bg_click
         } else if mouse_hov {
             self.bg_hover
@@ -62,7 +66,7 @@ impl UI {
         draw_rectangle(bounds.x, bounds.y, bounds.w, bounds.h, color);
         draw_rectangle_lines(bounds.x, bounds.y, bounds.w, bounds.h, 5.0, self.border);
 
-        mouse_clk
+        mouse_clk && self.active
     }
     pub fn button_icon(&self, icon: &Texture2D, bounds: Rect) -> bool {
         let clicked = self.button_impl(bounds);

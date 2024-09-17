@@ -1,21 +1,20 @@
-// #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![cfg_attr(debug_assertions, allow(warnings))]
 
-use colored::Colorize;
-use cross::cmd;
-use miniquad::window::dropped_file_bytes;
+use menu::Console;
 use std::env;
 use std::process;
-use std::process::ExitStatus;
+
+#[allow(unused_imports)]
+use cross::cmd;
+#[allow(unused_imports)]
+use miniquad::conf::Icon;
 
 use error::ErrorPage;
 use macroquad::prelude::*;
 use menu::Menu;
-use miniquad::{
-    conf::{Icon, Platform},
-    date,
-};
+use miniquad::conf::Platform;
 use script::{Engine, ScriptDir};
-use ui::Logger;
 
 mod cross;
 mod error;
@@ -24,6 +23,13 @@ mod menu;
 mod script;
 mod texture;
 mod ui;
+
+pub mod key {
+    use super::*;
+    pub const REFRESH: KeyCode = KeyCode::F5;
+    pub const FPS: KeyCode = KeyCode::F12;
+    pub const CONSOLE: &[KeyCode] = &[KeyCode::GraveAccent, KeyCode::Semicolon];
+}
 
 #[cfg(not(target_os = "macos"))]
 fn window_icon() -> Icon {
@@ -58,36 +64,27 @@ fn window() -> Conf {
 
 #[macroquad::main(window)]
 async fn main() {
-    #[cfg(target_os = "windows")]
-    match cmd("cmd", ["/C", "cls"]) {
-        Err(e) => eprintln!("ERROR: failed to clear screen: error = {e}"),
-        Ok(s) if !s.success() => eprintln!("ERROR: failed to clear screen: code = {s}"),
-        _ => {}
-    }
+    let mut console = Console::new();
 
-    println!(
-        "{name} {ver} {version}",
-        name = env!("CARGO_PKG_NAME").bold(),
-        ver = "version".bold(),
-        version = env!("CARGO_PKG_VERSION").green()
-    );
-    println!(
-        "Repository: {}",
-        env!("CARGO_PKG_REPOSITORY").green().underline()
-    );
-    println!("=========================");
+    console.print(format!(
+        "{name} version {version}",
+        name = env!("CARGO_PKG_NAME"),
+        version = env!("CARGO_PKG_VERSION")
+    ));
 
-    let mut logger = Logger::new(true);
+    console.print(format!("Repository: {}", env!("CARGO_PKG_REPOSITORY")));
+    console.print("=========================");
+
     let mut engine = Engine::new();
 
-    logger.log("Scripting engine initialized");
+    console.log("Scripting engine initialized");
 
     // Create dirs (if not exist)
     engine.ensure_dirs_exist().unwrap_or_else(|e| {
-        logger.err(format!("Failed to create required directories: {e}"));
+        console.err(format!("Failed to create required directories: {e}"));
         process::exit(1);
     });
-    logger.log(format!(
+    console.log(format!(
         "Required folders {:?}, {:?} and {:?} OK.",
         engine.global_dir, engine.script_dir, engine.asset_dir
     ));
@@ -95,22 +92,22 @@ async fn main() {
     // Create readme
     let readme = "README.txt";
     match engine.create_readme(readme) {
-        Ok(created) => logger.log(&format!("Created readme '{readme}' at {created:?}")),
-        Err(e) => logger.err(format!("Failed to create readme '{readme}': {e}")),
+        Ok(created) => console.log(&format!("Created readme '{readme}' at {created:?}")),
+        Err(e) => console.err(format!("Failed to create readme '{readme}': {e}")),
     }
 
     // Write examples
     let mut warnings = vec![];
-    logger.log("Writing examples...");
+    console.log("Writing examples...");
     if let Err(e) = engine.write_examples(&mut warnings) {
-        logger.err(format!(
+        console.err(format!(
             "Failed to write examples due to the following errors: {e:#?}"
         ));
     }
     if warnings.len() > 0 {
-        logger.warn("Encountered the following warnings while writing examples:");
+        console.warn("Encountered the following warnings while writing examples:");
         for warning in warnings {
-            logger.warn(format!(" - {warning}"));
+            console.warn(format!(" - {warning}"));
         }
     }
 
@@ -118,7 +115,7 @@ async fn main() {
     let mut start_error = None;
     let mut errors = vec![];
     if let Err(e) = engine.load_scripts(
-        &mut logger,
+        &mut console,
         &mut errors,
         &[ScriptDir::Scripts, ScriptDir::Examples],
     ) {
@@ -131,28 +128,34 @@ async fn main() {
     // Report script count
     let scripts_count = engine.scripts.len();
     if scripts_count == 0 {
-        logger.log(format!(
+        console.log(format!(
             "WARNING: No scripts ending in .rhai found in {:?}!",
             engine.script_dir
         ));
     } else {
-        logger.log(format!("Loaded {scripts_count} scripts!"));
+        console.log(format!("Loaded {scripts_count} scripts!"));
     }
 
     // Info messages
+    use key::*;
+
     println!();
-    logger.note("Scripts     can be reloaded           with F5");
-    logger.note("logging     can be disabled / toggled with F10");
-    logger.note("FPS counter can be enabled  / toggled with F12");
+    console.note(format!(
+        "Scripts     can be reloaded           with {REFRESH:?}"
+    ));
+    console.note(format!(
+        "FPS counter can be enabled  / toggled with {FPS:?}"
+    ));
     println!();
 
     // Watch for script changes
-    let mut menu = Menu::new(engine, logger, readme);
+    let mut menu = Menu::new(engine, console, readme);
     menu.error = start_error;
 
     loop {
         menu.update();
         menu.draw();
+        menu.console();
 
         next_frame().await;
     }
