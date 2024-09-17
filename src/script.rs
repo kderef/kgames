@@ -19,6 +19,7 @@ pub struct Script<'a> {
     pub ast: AST,
     //TODO:
     pub scope: Scope<'a>,
+    pub is_example: bool,
 }
 impl<'a> Default for Script<'a> {
     fn default() -> Self {
@@ -27,6 +28,7 @@ impl<'a> Default for Script<'a> {
             modified: SystemTime::now(),
             ast: AST::empty(),
             scope: Scope::new(),
+            is_example: false,
         }
     }
 }
@@ -270,6 +272,7 @@ impl<'a> Engine<'a> {
         console: &mut Console,
         errors: &mut Vec<(PathBuf, anyhow::Error)>,
         scripts: impl Iterator<Item = io::Result<DirEntry>>,
+        is_example_dir: bool,
     ) -> anyhow::Result<()> {
         let mut result = Ok(());
         let ext = OsStr::new("rhai");
@@ -346,6 +349,7 @@ impl<'a> Engine<'a> {
 
             // *** Compile script! *** //
             let mut script = Script::default();
+            script.is_example = is_example_dir;
 
             // Disable optimizations
             self.engine
@@ -395,17 +399,24 @@ impl<'a> Engine<'a> {
         from: &[ScriptDir],
     ) -> anyhow::Result<()> {
         let mut result = Ok(());
+        let mut is_example_dir = false;
+
         for source in from {
             let src = match source {
                 ScriptDir::Scripts => &self.script_dir,
-                ScriptDir::Examples => &self.example_dir,
+                ScriptDir::Examples => {
+                    is_example_dir = true;
+                    &self.example_dir
+                }
             };
 
             console.log(format!("==> Loading scripts from {src:?}"));
 
             match fs::read_dir(src) {
                 Ok(scripts) => {
-                    if let Err(e) = self.load_scripts_from_dir(console, errors, scripts) {
+                    if let Err(e) =
+                        self.load_scripts_from_dir(console, errors, scripts, is_example_dir)
+                    {
                         result = Err(e);
                     }
                 }

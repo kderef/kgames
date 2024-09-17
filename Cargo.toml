@@ -23,7 +23,7 @@ cvars = "0.4.2"
 cvars-console = "0.2.0"
 fuzzy-matcher = "0.3.7"
 include_dir = "0.7.4"
-macroquad = {version = "0.4.5", features = ["audio"]}
+macroquad = {version = "0.4.13", features = ["audio"]}
 # UI
 msgbox = "0.7.0"
 # yakui-macroquad = "0.3.1"

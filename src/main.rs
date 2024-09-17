@@ -17,6 +17,7 @@ use miniquad::conf::Platform;
 use script::{Engine, ScriptDir};
 
 mod cross;
+mod engine;
 mod error;
 mod ffi;
 mod menu;

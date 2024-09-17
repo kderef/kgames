@@ -132,11 +132,16 @@ impl Console {
         }
 
         // Scroll history up
-        let count = 10; // LATER configurable
-        if pressed_page_up {
+        let count = 1; // LATER configurable
+
+        let mouse_scroll = mouse_wheel();
+        let scroll_up = pressed_page_up || mouse_scroll.1 > 2.0;
+        let scroll_down = pressed_page_down || mouse_scroll.1 < -2.0;
+
+        if scroll_up {
             self.console.history_scroll_up(count);
         }
-        if pressed_page_down {
+        if scroll_down {
             self.console.history_scroll_down(count);
         }
     }
