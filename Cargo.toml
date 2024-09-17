@@ -20,10 +20,12 @@ panic = "abort"
 [dependencies]
 anyhow = "1.0.86"
 colored = "2.1.0"
+fuzzy-matcher = "0.3.7"
 include_dir = "0.7.4"
 macroquad = {version = "0.4.11", features = ["audio"]}
 # UI
 msgbox = "0.7.0"
+# yakui-macroquad = "0.3.1"
 
 [dependencies.futures]
 version = "0.3.30"

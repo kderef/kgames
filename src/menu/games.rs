@@ -1,6 +1,7 @@
 use super::Menu;
 use super::*;
 use macroquad::prelude::*;
+use macroquad::ui::{hash, root_ui};
 
 impl<'a> Menu<'a> {
     pub fn draw_games(&mut self) {
@@ -23,5 +24,13 @@ impl<'a> Menu<'a> {
                 return;
             }
         }
+
+        let skin = self.ui.skin();
+
+        let mut d = String::new();
+
+        root_ui().push_skin(&skin);
+        // root_ui().button(vec2(400.0, 200.0), "Hello");
+        // root_ui().input_text(hash!(), "Search ...", &mut self.ui.query);
     }
 }

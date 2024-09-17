@@ -8,13 +8,15 @@ pub const fn rgb(r: f32, g: f32, b: f32) -> Color {
     Color { r, g, b, a: 1. }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct UI {
     pub bg: Color,
     pub fg: Color,
     pub border: Color,
     pub bg_hover: Color,
     pub bg_click: Color,
+    pub font: Font,
+    pub query: String,
 }
 
 impl Default for UI {
@@ -25,6 +27,13 @@ impl Default for UI {
             border: GRAY,
             bg_hover: DARKGRAY,
             bg_click: LIGHTGRAY,
+            font: {
+                let mut f =
+                    load_ttf_font_from_bytes(include_bytes!("../res/CnC-RedAlert.ttf")).unwrap();
+                f.set_filter(FilterMode::Nearest);
+                f
+            },
+            query: String::new(),
         }
     }
 }
@@ -37,6 +46,7 @@ impl UI {
             border,
             bg_hover: Color::new(bg.r, bg.g, bg.b, bg.a * 0.1),
             bg_click: Color::new(bg.r, bg.g, bg.b, bg.a * 1.1),
+            ..Default::default()
         }
     }
     fn button_impl(&self, bounds: Rect) -> bool {
@@ -101,30 +111,40 @@ impl UI {
             bg_hover,
             bg_click,
             border,
+            font,
+            ..
         } = self;
 
-        let mut base = root_ui()
-            .style_builder()
-            .text_color(*fg)
-            .color(*bg)
-            .color_hovered(*bg_hover)
-            .color_clicked(*bg_click)
-            .font_size(30)
-            .build();
+        let font_size = 38.0;
+        let margin = font_size / 2.;
+
+        let base = || {
+            root_ui()
+                .style_builder()
+                .text_color(*fg)
+                .color(*bg)
+                .color_hovered(*bg_hover)
+                .color_clicked(*bg_click)
+                .font_size(font_size as u16)
+                .with_font(font)
+                .unwrap()
+        };
 
         Skin {
-            // label_style: default,
-            // button_style: default,
-            // tabbar_style: default,
-            // combobox_style: default,
-            // window_style: default,
-            // editbox_style: default,
-            // window_titlebar_style: default,
-            // scrollbar_style: default,
-            // scrollbar_handle_style: default,
-            // checkbox_style: default,
-            // group_style: default,
-            // margin: default,
+            label_style: base().build(),
+            button_style: base()
+                .margin(RectOffset::new(margin, margin, 0., 0.))
+                .build(),
+            tabbar_style: base().build(),
+            combobox_style: base().build(),
+            window_style: base().build(),
+            editbox_style: base().build(),
+            window_titlebar_style: base().build(),
+            scrollbar_style: base().build(),
+            scrollbar_handle_style: base().build(),
+            checkbox_style: base().build(),
+            group_style: base().build(),
+            margin: 20.0,
             // title_height: default,
             // scroll_width: default,
             // scroll_multiplier: default,

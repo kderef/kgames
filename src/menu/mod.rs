@@ -16,6 +16,9 @@ use miniquad::window::dropped_file_path;
 use std::path::Path;
 use std::path::PathBuf;
 
+use fuzzy_matcher::skim::SkimMatcherV2;
+use fuzzy_matcher::FuzzyMatcher;
+
 #[allow(unused)]
 pub struct DroppedFile {
     path: PathBuf,
@@ -62,6 +65,11 @@ pub struct Menu<'a> {
     // State
     state: State,
     dialog: Option<Dialog<'a>>,
+    key_entered: bool,
+
+    // Fzf
+    matcher: SkimMatcherV2,
+    matches: Option<Vec<usize>>,
 
     pub show_fps: bool,
     pub error: Option<ErrorPage>,
@@ -84,12 +92,21 @@ impl<'a> Menu<'a> {
             // State
             state: State::Menu,
             dialog: None,
+            key_entered: false,
 
-            ui: UI::new(
-                rgb(0.05, 0.05, 0.05),
-                rgb(0.92156863, 0.85882353, 0.69803922),
-                rgb(0.5, 0.5, 0.5),
-            ),
+            // Fzf
+            matcher: SkimMatcherV2::default(),
+            matches: None,
+
+            ui: {
+                let mut ui = UI::new(
+                    rgb(0.05, 0.05, 0.05),
+                    rgb(0.92156863, 0.85882353, 0.69803922),
+                    rgb(0.5, 0.5, 0.5),
+                );
+                ui.bg_hover = GRAY;
+                ui
+            },
 
             engine,
         }
