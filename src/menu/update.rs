@@ -69,7 +69,7 @@ impl<'a> Menu<'a> {
         }
 
         if is_key_pressed(KeyCode::Escape) {
-            if self.dialog.is_none() {
+            if self.dialog.is_some() {
                 self.dialog = None;
                 return;
             }

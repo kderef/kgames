@@ -227,6 +227,13 @@ pub const KEYS: [(&'static str, KeyCode); 121] = [
     ("KEY_UNKOWN", Unknown),
 ];
 
+pub const MOUSE_BUTTONS: [(&'static str, MouseButton); 4] = [
+    ("MOUSE_LEFT", MouseButton::Left),
+    ("MOUSE_RIGHT", MouseButton::Right),
+    ("MOUSE_MIDDLE", MouseButton::Middle),
+    ("MOUSE_UNKNOWN", MouseButton::Unknown),
+];
+
 fn to_eval_err(e: impl ToString) -> Box<EvalAltResult> {
     Box::new(EvalAltResult::from(e.to_string()))
 }

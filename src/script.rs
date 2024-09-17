@@ -2,7 +2,7 @@ use include_dir::{include_dir, Dir};
 use macroquad::prelude::*;
 use std::fs::{self, DirEntry};
 use std::path::{Path, PathBuf};
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 use std::{ffi::OsStr, io};
 
 use crate::{ffi::*, reg_type, texture::asset_store};
@@ -20,6 +20,16 @@ pub struct Script<'a> {
     //TODO:
     pub scope: Scope<'a>,
 }
+impl<'a> Default for Script<'a> {
+    fn default() -> Self {
+        Self {
+            path: PathBuf::new(),
+            modified: SystemTime::now(),
+            ast: AST::empty(),
+            scope: Scope::new(),
+        }
+    }
+}
 
 impl<'a> Script<'a> {
     pub fn name(&self) -> &str {
@@ -27,6 +37,26 @@ impl<'a> Script<'a> {
             .file_name()
             .and_then(OsStr::to_str)
             .unwrap_or("INVALID_SCRIPT_NAME")
+    }
+    pub fn populate_scope(&mut self) {
+        for (name, color) in COLORS {
+            self.scope.push_constant(name, color);
+        }
+        for (name, key) in KEYS {
+            self.scope.push_constant(name, key);
+        }
+        for (name, key) in MOUSE_BUTTONS {
+            self.scope.push_constant(name, key);
+        }
+        self.ast
+            .iter_literal_variables(true, true)
+            .for_each(|(name, is_const, val)| {
+                if is_const {
+                    self.scope.push_constant(name, val);
+                } else {
+                    self.scope.push_dynamic(name, val);
+                }
+            });
     }
 }
 
@@ -43,15 +73,6 @@ pub struct Engine<'a> {
 pub enum ScriptDir {
     Scripts,
     Examples,
-}
-
-fn populate_scope(scope: &mut Scope) {
-    for (name, color) in COLORS {
-        scope.push_constant(name, color);
-    }
-    for (name, key) in KEYS {
-        scope.push_constant(name, key);
-    }
 }
 
 impl<'a> Engine<'a> {
@@ -307,16 +328,7 @@ impl<'a> Engine<'a> {
                             continue;
                         }
                     };
-                    populate_scope(&mut existing.scope);
-                    existing.ast.iter_literal_variables(true, true).for_each(
-                        |(name, is_const, val)| {
-                            if is_const {
-                                existing.scope.push_constant(name, val);
-                            } else {
-                                existing.scope.push_dynamic(name, val);
-                            }
-                        },
-                    );
+                    existing.populate_scope();
                 }
                 continue;
             }
@@ -333,6 +345,7 @@ impl<'a> Engine<'a> {
             };
 
             // *** Compile script! *** //
+            let mut script = Script::default();
 
             // Disable optimizations
             self.engine
@@ -344,33 +357,18 @@ impl<'a> Engine<'a> {
                     continue;
                 }
             };
-
-            // Create and populate scope
-            let mut scope = Scope::new();
-            populate_scope(&mut scope);
-            ast.iter_literal_variables(true, true)
-                .for_each(|(name, is_const, val)| {
-                    if is_const {
-                        scope.push_constant(name, val);
-                    } else {
-                        scope.push_dynamic(name, val);
-                    }
-                });
+            script.populate_scope();
 
             // Enable optimizations
             self.engine
                 .set_optimization_level(rhai::OptimizationLevel::Simple);
-            let ast = self
-                .engine
-                .optimize_ast(&scope, ast, self.engine.optimization_level());
+            let ast =
+                self.engine
+                    .optimize_ast(&script.scope, ast, self.engine.optimization_level());
 
-            // Create script
-            let mut script = Script {
-                ast,
-                modified,
-                path,
-                scope,
-            };
+            script.ast = ast;
+            script.modified = modified;
+            script.path = path;
 
             // Run code once
             if let Err(e) = self
