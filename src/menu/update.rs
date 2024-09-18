@@ -1,11 +1,13 @@
 use super::*;
+use crate::engine::GameScript;
+use crate::engine::ScriptDir;
+use crate::engine::ScriptEngine;
 use crate::key;
-use crate::script::*;
 use crate::{cross::fuzzy_search, error::ErrorPage};
 use macroquad::prelude::*;
 use miniquad::window::{dropped_file_bytes, dropped_file_count, dropped_file_path};
 
-impl<'a> Menu<'a> {
+impl<'a, E: ScriptEngine> Menu<'a, E> {
     pub fn reload_scripts(&mut self) {
         self.console.log("### Reloading scripts");
         let mut errors = vec![];
@@ -42,7 +44,7 @@ impl<'a> Menu<'a> {
 
                     if !needle.is_empty() {
                         // A Key was entered into the search bar
-                        let haystack = self.engine.scripts.iter().map(|s| s.name());
+                        let haystack = self.engine.scripts().iter().filter_map(|s| s.name());
 
                         let min_score = 20;
 
@@ -64,13 +66,7 @@ impl<'a> Menu<'a> {
 
         match self.state {
             State::Playing(game) => {
-                let script = &mut self.engine.scripts[game];
-                let result =
-                    self.engine
-                        .engine
-                        .call_fn::<()>(&mut script.scope, &script.ast, "update", ());
-
-                if let Err(e) = result {
+                if let Err(e) = self.engine.call_function(game, "update") {
                     self.console
                         .err(format!("Error while executing script -> update(): {e}"));
                 }
@@ -87,8 +83,8 @@ impl<'a> Menu<'a> {
             }
             // Reset game on escape
             if let State::Playing(game) = self.state {
-                let script = &mut self.engine.scripts[game];
-                script.scope.clear();
+                let script = &mut self.engine.scripts()[game];
+                script.reset();
                 self.reload_scripts();
             }
             self.state = State::Menu;

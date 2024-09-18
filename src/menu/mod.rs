@@ -6,6 +6,9 @@ mod update;
 
 pub use console::Console;
 
+use crate::engine::dirs;
+use crate::engine::GameScript;
+use crate::engine::ScriptEngine;
 use crate::error::ErrorPage;
 use crate::script::Engine;
 use crate::texture::*;
@@ -52,8 +55,8 @@ pub enum State {
     Playing(usize),
 }
 
-pub struct Menu<'a> {
-    engine: Engine<'a>,
+pub struct Menu<'a, E: ScriptEngine> {
+    engine: E,
     ui: UI,
 
     // Console
@@ -82,8 +85,9 @@ pub struct Menu<'a> {
     pub error: Option<ErrorPage>,
 }
 
-impl<'a> Menu<'a> {
-    pub fn new(engine: Engine<'a>, console: Console, readme_name: impl AsRef<Path>) -> Self {
+impl<'a, E: ScriptEngine> Menu<'a, E> {
+    pub fn new(engine: E, console: Console, readme_name: impl AsRef<Path>) -> Self {
+        let dirs = dirs();
         Self {
             show_fps: false,
             error: None,
@@ -98,7 +102,7 @@ impl<'a> Menu<'a> {
             refresh: asset_store().get_texture("search_file").unwrap(),
             help: asset_store().get_texture("help_book").unwrap(),
             // Files
-            readme: engine.global_dir.join(readme_name),
+            readme: dirs.root.join(readme_name),
 
             // State
             state: State::Menu,

@@ -2,6 +2,7 @@ use super::*;
 use std::cell::LazyCell;
 use std::fs;
 use std::io;
+use std::path::Path;
 use std::path::PathBuf;
 
 pub const GLOBAL_DIR: &str = env!("CARGO_PKG_NAME");
@@ -43,4 +44,11 @@ pub static mut DIRS: LazyCell<Dirs> = LazyCell::new(|| {
 
 pub fn dirs() -> &'static Dirs {
     unsafe { &DIRS }
+}
+
+pub fn create_readme(filename: impl AsRef<Path>) -> io::Result<PathBuf> {
+    static README: &str = include_str!("../../README.md");
+    let path = dirs().root.join(filename);
+    fs::write(&path, README)?;
+    Ok(path)
 }

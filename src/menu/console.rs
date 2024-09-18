@@ -8,7 +8,7 @@ const HIDE_MOUSE: bool = false;
 
 cvars! {}
 
-impl<'a> Menu<'a> {
+impl<'a, E: ScriptEngine> Menu<'a, E> {
     pub fn console(&mut self) {
         // NOTE: on MacOS, the key to open it is set to ';' instead of '`'
         self.console.update(&mut self.cvars);

@@ -3,28 +3,7 @@ use crate::{cross, ui::DialogOption};
 use macroquad::prelude::*;
 use miniquad::window::request_quit;
 
-impl<'a> Menu<'a> {
-    #[allow(unused)]
-    fn draw_ui_temp(&mut self, y: f32) {
-        // FIXME: temporary solution
-        for (i, name) in self.engine.scripts.iter().enumerate() {
-            let i = i + 1;
-            let (x, y, w, h) = (200., 200., 500., 50.);
-            draw_rectangle(x, y + h * i as f32, w, h, BLACK);
-            draw_text(
-                &format!("{i} - {}", name.name()),
-                x,
-                y + h * i as f32 + h / 2.,
-                h * 0.8,
-                WHITE,
-            );
-            if is_key_pressed(unsafe { std::mem::transmute(KeyCode::Key0 as u16 + i as u16) }) {
-                self.state = State::Playing(i - 1);
-                return;
-            }
-        }
-    }
-
+impl<'a, E: ScriptEngine> Menu<'a, E> {
     fn draw_ui(&mut self, y: f32) {
         let (screen_w, screen_h) = (screen_width(), screen_height());
 
@@ -90,13 +69,9 @@ impl<'a> Menu<'a> {
 
         match self.state {
             State::Playing(game) => {
-                let script = &mut self.engine.scripts[game];
-                let result =
-                    self.engine
-                        .engine
-                        .call_fn::<()>(&mut script.scope, &script.ast, "draw", ());
+                let script = &mut self.engine.scripts()[game];
 
-                if let Err(e) = result {
+                if let Err(e) = self.engine.call_function(game, "draw") {
                     self.console
                         .err(format!("Error while executings script: {e}"));
                 }
@@ -174,7 +149,7 @@ impl<'a> Menu<'a> {
         };
 
         if self.ui.button_icon(self.folder_icon, bounds) {
-            if let Err(e) = cross::open_path(&self.engine.global_dir) {
+            if let Err(e) = cross::open_path(&dirs().root) {
                 self.console.err(e);
             }
         }

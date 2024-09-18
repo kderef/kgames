@@ -3,17 +3,17 @@ use super::*;
 use macroquad::prelude::*;
 use macroquad::ui::{hash, root_ui};
 
-impl<'a> Menu<'a> {
+impl<'a, E: ScriptEngine> Menu<'a, E> {
     pub fn draw_games(&mut self) {
         clear_background(self.background);
 
         // FIXME: remove
-        for (i, name) in self.engine.scripts.iter().enumerate() {
+        for (i, name) in self.engine.scripts().iter().enumerate() {
             let i = i + 1;
             let (x, y, w, h) = (200., 200., 500., 50.);
             draw_rectangle(x, y + h * i as f32, w, h, BLACK);
             draw_text(
-                &format!("{i} - {}", name.name()),
+                &format!("{i} - {}", name.name().unwrap_or("INVALID_NAME")),
                 x,
                 y + h * i as f32 + h / 2.,
                 h * 0.8,

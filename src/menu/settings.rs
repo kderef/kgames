@@ -1,6 +1,8 @@
+use crate::engine::{GameScript, ScriptEngine};
+
 use super::Menu;
 
-impl<'a> Menu<'a> {
+impl<'a, E: ScriptEngine> Menu<'a, E> {
     pub fn draw_settings(&mut self) {
         //
     }

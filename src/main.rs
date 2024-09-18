@@ -1,6 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 #![cfg_attr(debug_assertions, allow(warnings))]
 
+use engine::create_readme;
+use engine::dirs;
+use engine::ENGINE_NAME;
 use menu::Console;
 use std::env;
 use std::process;
@@ -14,7 +17,10 @@ use error::ErrorPage;
 use macroquad::prelude::*;
 use menu::Menu;
 use miniquad::conf::Platform;
-use script::{Engine, ScriptDir};
+// use script::{Engine, ScriptDir};
+use engine::engine_impl::*;
+use engine::ScriptDir;
+use engine::ScriptEngine;
 
 mod cross;
 mod engine;
@@ -66,6 +72,7 @@ fn window() -> Conf {
 #[macroquad::main(window)]
 async fn main() {
     let mut console = Console::new();
+    let dirs = dirs();
 
     console.print(format!(
         "{name} version {version}",
@@ -74,6 +81,7 @@ async fn main() {
     ));
 
     console.print(format!("Repository: {}", env!("CARGO_PKG_REPOSITORY")));
+    console.print(format!("Scripting engine: {}", ENGINE_NAME));
     console.print("=========================");
 
     let mut engine = Engine::new();
@@ -81,18 +89,18 @@ async fn main() {
     console.log("Scripting engine initialized");
 
     // Create dirs (if not exist)
-    engine.ensure_dirs_exist().unwrap_or_else(|e| {
+    dirs.create().unwrap_or_else(|e| {
         console.err(format!("Failed to create required directories: {e}"));
         process::exit(1);
     });
     console.log(format!(
         "Required folders {:?}, {:?} and {:?} OK.",
-        engine.global_dir, engine.script_dir, engine.asset_dir
+        dirs.root, dirs.scripts, dirs.assets
     ));
 
     // Create readme
     let readme = "README.txt";
-    match engine.create_readme(readme) {
+    match create_readme(readme) {
         Ok(created) => console.log(&format!("Created readme '{readme}' at {created:?}")),
         Err(e) => console.err(format!("Failed to create readme '{readme}': {e}")),
     }
@@ -131,7 +139,7 @@ async fn main() {
     if scripts_count == 0 {
         console.log(format!(
             "WARNING: No scripts ending in .rhai found in {:?}!",
-            engine.script_dir
+            dirs.scripts
         ));
     } else {
         console.log(format!("Loaded {scripts_count} scripts!"));

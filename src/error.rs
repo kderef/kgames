@@ -1,11 +1,8 @@
+use crate::engine::ScriptDir;
 use macroquad::prelude::*;
 use std::path::PathBuf;
 
-use crate::{
-    menu::Console,
-    script::{Engine, ScriptDir},
-    ui::Logger,
-};
+use crate::{engine::ScriptEngine, menu::Console, ui::Logger};
 
 pub struct ErrorPage {
     context: String,
@@ -85,7 +82,7 @@ impl ErrorPage {
     }
 
     /// Returns if should keep showing
-    pub fn show(&mut self, engine: &mut Engine, console: &mut Console) -> bool {
+    pub fn show(&mut self, engine: &mut impl ScriptEngine, console: &mut Console) -> bool {
         let bg = Color::new(0.7, 0., 0., 1.);
         clear_background(bg);
 

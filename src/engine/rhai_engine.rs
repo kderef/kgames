@@ -7,7 +7,7 @@ use std::time::{Duration, SystemTime};
 use std::{ffi::OsStr, io};
 
 use crate::{ffi::*, reg_type, texture::asset_store};
-use rhai::{EvalAltResult, ImmutableString, Scope, AST};
+use rhai::{EvalAltResult, FuncArgs, ImmutableString, Scope, AST};
 
 use crate::menu::Console;
 
@@ -64,6 +64,7 @@ pub struct Script<'a> {
     pub scope: Scope<'a>,
     pub is_example: bool,
 }
+
 impl<'a> Default for Script<'a> {
     fn default() -> Self {
         Self {
@@ -75,13 +76,37 @@ impl<'a> Default for Script<'a> {
         }
     }
 }
+impl<'a> GameScript for Script<'a> {
+    fn path<'p>(&'p self) -> &'p Path {
+        &self.path
+    }
+    fn name<'n>(&'n self) -> Option<&'n str> {
+        self.path.file_name().and_then(OsStr::to_str)
+    }
+    fn is_example(&self) -> bool {
+        self.is_example
+    }
+    fn reset(&mut self) {
+        self.scope.clear();
+    }
+}
 
 pub struct Engine<'a> {
     pub engine: rhai::Engine,
     pub scripts: Vec<Script<'a>>,
 }
+impl<'a> Engine<'a> {
+    pub fn new() -> Self {
+        Self {
+            engine: rhai::Engine::new(),
+            scripts: vec![],
+        }
+    }
+}
 
 impl<'a> ScriptEngine for Engine<'a> {
+    type Script = Script<'a>;
+
     fn extension<'b>() -> &'b str {
         "rhai"
     }
@@ -195,15 +220,35 @@ impl<'a> ScriptEngine for Engine<'a> {
         }
     }
 
+    fn call_function(&mut self, script_index: usize, name: impl AsRef<str>) -> anyhow::Result<()> {
+        let script = &mut self.scripts[script_index];
+        self.engine
+            .call_fn::<()>(
+                &mut script.scope, // NOTE: possible OOB
+                &script.ast,
+                name,
+                (), // IMPORTANT: no args are passed
+            )
+            .map_err(|e| anyhow::anyhow!("{e}"));
+        Ok(())
+    }
+
+    fn scripts<'s>(&'s mut self) -> &'s mut [Self::Script] {
+        &mut self.scripts
+    }
+
     fn load_scripts(
+        &mut self,
         console: &mut Console,
         errors: &mut ErrorMap,
         from: &[ScriptDir],
     ) -> anyhow::Result<()> {
+        // TODO
         Ok(())
     }
 
     fn reload_scripts(console: &mut Console, errors: &mut ErrorMap) -> anyhow::Result<()> {
+        // TODO
         Ok(())
     }
 
