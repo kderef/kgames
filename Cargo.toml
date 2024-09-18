@@ -6,7 +6,8 @@ build = "build.rs"
 repository = "https://github.com/kderef/kgames"
 
 [features]
-default = ["rhai-engine"]
+# default = ["rhai-engine"]
+default = ["lua-engine"]
 rhai-engine = ["dep:rhai"]
 lua-engine = ["dep:mlua"]
 

@@ -10,7 +10,6 @@ use crate::engine::dirs;
 use crate::engine::GameScript;
 use crate::engine::ScriptEngine;
 use crate::error::ErrorPage;
-use crate::script::Engine;
 use crate::texture::*;
 use crate::ui::rgb;
 use crate::ui::Logger;

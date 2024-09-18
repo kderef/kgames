@@ -27,7 +27,6 @@ mod engine;
 mod error;
 mod ffi;
 mod menu;
-mod script;
 mod texture;
 mod ui;
 
@@ -138,7 +137,7 @@ async fn main() {
     }
 
     // Report script count
-    let scripts_count = engine.scripts.len();
+    let scripts_count = engine.scripts().len();
     if scripts_count == 0 {
         console.log(format!(
             "WARNING: No scripts ending in .rhai found in {:?}!",

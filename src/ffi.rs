@@ -1,10 +1,13 @@
-use std::{cell::OnceCell, path::PathBuf};
+use std::{cell::OnceCell, fmt::Display, path::PathBuf};
 
 use macroquad::prelude::*;
-use rhai::{EvalAltResult, ImmutableString};
+
 use KeyCode::*;
 
-use crate::texture::{asset_store, asset_store_mut, AssetStore};
+use crate::{
+    engine::dirs,
+    texture::{asset_store, asset_store_mut, AssetStore},
+};
 
 // Macros
 /// Macro for adding getters/setters to exposed types.
@@ -234,24 +237,37 @@ pub const MOUSE_BUTTONS: [(&'static str, MouseButton); 4] = [
     ("MOUSE_UNKNOWN", MouseButton::Unknown),
 ];
 
-fn to_eval_err(e: impl ToString) -> Box<EvalAltResult> {
-    Box::new(EvalAltResult::from(e.to_string()))
+#[cfg(feature = "rhai-engine")]
+mod script {
+    use rhai::{EvalAltResult, ImmutableString};
+    pub type Error = Box<EvalAltResult>;
+    pub type Result<T> = std::result::Result<T, Error>;
+}
+#[cfg(feature = "lua-engine")]
+mod script {
+    pub type Error = mlua::Error;
+    pub type Result<T> = std::result::Result<T, Error>;
 }
 
-static mut GLOBAL_DIR: OnceCell<PathBuf> = OnceCell::new();
-pub fn global_dir() -> &'static PathBuf {
-    unsafe { GLOBAL_DIR.get_or_init(|| PathBuf::from(crate::script::GLOBAL_DIR)) }
+fn external_error(e: impl ToString + Display) -> script::Error {
+    #[cfg(feature = "rhai-engine")]
+    return Box::new(EvalAltResult::from(e.to_string()));
+    #[cfg(feature = "lua-engine")]
+    return script::Error::external(anyhow::anyhow!("{e}"));
 }
 
 /// Sync version of load_texture compatible with rhai
-pub fn load_texture_sync(path: &str) -> Result<&Texture2D, Box<EvalAltResult>> {
-    let complete_path = global_dir().join("assets/").join(path);
+pub fn load_texture_sync(path: &str) -> script::Result<&Texture2D> {
+    let complete_path = dirs().assets.join(path);
 
-    let path_str = complete_path.to_str().ok_or(format!(
-        "Failed to convert path {path:?} to string (Maybe invalid UTF-8?)"
-    ))?;
+    let path_str = complete_path
+        .to_str()
+        .ok_or(format!(
+            "Failed to convert path {path:?} to string (Maybe invalid UTF-8?)"
+        ))
+        .map_err(external_error)?;
 
-    let texture = futures::executor::block_on(load_texture(path_str)).map_err(to_eval_err)?;
+    let texture = futures::executor::block_on(load_texture(path_str)).map_err(external_error)?;
 
     asset_store_mut()
         .user_textures
@@ -261,16 +277,14 @@ pub fn load_texture_sync(path: &str) -> Result<&Texture2D, Box<EvalAltResult>> {
     Ok(unsafe { asset_store_mut().user_textures.get(path).unwrap_unchecked() })
 }
 
-type RhaiResult<T> = Result<T, Box<EvalAltResult>>;
-
 /// Get stored texture (from engine)
-pub fn load_texture_stored(name: &str) -> RhaiResult<&Texture2D> {
+pub fn load_texture_stored(name: &str) -> script::Result<&Texture2D> {
     asset_store()
         .get_texture(name)
-        .ok_or(to_eval_err(format!("Texture not found: '{name}'")))
+        .ok_or(external_error(format!("Texture not found: '{name}'")))
 }
 
-pub fn draw_texture_stored(name: &str, x: f32, y: f32, tint: Color) -> RhaiResult<()> {
+pub fn draw_texture_stored(name: &str, x: f32, y: f32, tint: Color) -> script::Result<()> {
     let tex = load_texture_stored(name)?;
     draw_texture(tex, x, y, tint);
     Ok(())
