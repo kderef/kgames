@@ -11,6 +11,130 @@ use rhai::{EvalAltResult, FuncArgs, ImmutableString, Scope, AST};
 
 use crate::menu::Console;
 
+fn load_scripts_from_dir(
+    eng: &mut Engine,
+    console: &mut Console,
+    errors: &mut Vec<(PathBuf, anyhow::Error)>,
+    scripts: impl Iterator<Item = io::Result<DirEntry>>,
+    is_example_dir: bool,
+) -> anyhow::Result<()> {
+    let mut result = Ok(());
+    let ext = OsStr::new("rhai");
+
+    for file in scripts {
+        if let Err(e) = file {
+            console.log(format!("Skipping file: {e}"));
+            continue;
+        }
+
+        let file = file.unwrap();
+        let path = file.path();
+
+        match path.extension() {
+            None => {
+                console.log(format!("Skipping file with no extension: {path:?}"));
+                continue;
+            }
+            Some(e) if e != ext => {
+                console.log(format!(
+                    "Skipping file with unknown(not .rhai) extension: {path:?}"
+                ));
+                continue;
+            }
+            _ => {} // Correct extension
+        }
+
+        // Error handling
+        let mut add_err = |e| {
+            errors.push((path.clone(), e));
+            if result.is_ok() {
+                result = Err(anyhow::anyhow!("Failed to load scripts"));
+            }
+        };
+
+        // Check for update
+        let metadata = file.metadata()?;
+        let modified = metadata.modified()?;
+
+        if let Some(existing) = eng.scripts.iter_mut().find(|s| s.path == path) {
+            if existing.modified != modified {
+                existing.modified = modified;
+
+                let contents = match fs::read_to_string(&path) {
+                    Ok(c) => c,
+                    Err(e) => {
+                        add_err(e.into());
+                        continue;
+                    }
+                };
+
+                existing.ast = match eng.engine.compile(contents) {
+                    Ok(a) => a,
+                    Err(e) => {
+                        add_err(e.into());
+                        continue;
+                    }
+                };
+                existing.populate_scope();
+            }
+            continue;
+        }
+
+        // Add new script
+        console.log(format!("Adding new script {path:?}"));
+
+        let contents = match fs::read_to_string(&path) {
+            Ok(c) => c,
+            Err(e) => {
+                add_err(e.into());
+                continue;
+            }
+        };
+
+        // *** Compile script! *** //
+        let mut script = Script::default();
+        script.is_example = is_example_dir;
+
+        // Disable optimizations
+        eng.engine
+            .set_optimization_level(rhai::OptimizationLevel::None);
+        let ast = match eng.engine.compile(contents) {
+            Ok(a) => a,
+            Err(e) => {
+                add_err(e.into());
+                continue;
+            }
+        };
+        script.populate_scope();
+
+        // Enable optimizations
+        eng.engine
+            .set_optimization_level(rhai::OptimizationLevel::Simple);
+        let ast = eng
+            .engine
+            .optimize_ast(&script.scope, ast, eng.engine.optimization_level());
+
+        script.ast = ast;
+        script.modified = modified;
+        script.path = path;
+
+        // Run code once
+        if let Err(e) = eng
+            .engine
+            .run_ast_with_scope(&mut script.scope, &script.ast)
+        {
+            let e = anyhow::anyhow!("Failed to init script: {e}");
+            result = Err(anyhow::anyhow!("{e}"));
+            errors.push((script.path.clone(), e.into()));
+            continue;
+        }
+
+        eng.scripts.push(script);
+    }
+
+    result
+}
+
 macro_rules! reg_type {
     (
         $engine: expr => {
@@ -88,6 +212,26 @@ impl<'a> GameScript for Script<'a> {
     }
     fn reset(&mut self) {
         self.scope.clear();
+    }
+    fn populate_scope(&mut self) {
+        for (name, color) in COLORS {
+            self.scope.push_constant(name, color);
+        }
+        for (name, key) in KEYS {
+            self.scope.push_constant(name, key);
+        }
+        for (name, key) in MOUSE_BUTTONS {
+            self.scope.push_constant(name, key);
+        }
+        self.ast
+            .iter_literal_variables(true, true)
+            .for_each(|(name, is_const, val)| {
+                if is_const {
+                    self.scope.push_constant(name, val);
+                } else {
+                    self.scope.push_dynamic(name, val);
+                }
+            });
     }
 }
 
@@ -243,13 +387,38 @@ impl<'a> ScriptEngine for Engine<'a> {
         errors: &mut ErrorMap,
         from: &[ScriptDir],
     ) -> anyhow::Result<()> {
-        // TODO
-        Ok(())
+        let mut result = Ok(());
+        let mut is_example_dir = false;
+
+        for source in from {
+            let src = source.path();
+
+            console.log(format!("==> Loading scripts from {src:?}"));
+
+            match fs::read_dir(src) {
+                Ok(scripts) => {
+                    if let Err(e) =
+                        load_scripts_from_dir(self, console, errors, scripts, is_example_dir)
+                    {
+                        result = Err(e);
+                    }
+                }
+                Err(e) => {
+                    console.err(format!("Failed to read dir {src:?}: {e}"));
+                    result = Err(e.into());
+                }
+            }
+        }
+        result
     }
 
-    fn reload_scripts(console: &mut Console, errors: &mut ErrorMap) -> anyhow::Result<()> {
-        // TODO
-        Ok(())
+    fn reload_scripts(
+        &mut self,
+        console: &mut Console,
+        errors: &mut ErrorMap,
+    ) -> anyhow::Result<()> {
+        // NOTE: useless!
+        self.load_scripts(console, errors, &[ScriptDir::Scripts, ScriptDir::Examples])
     }
 
     fn write_examples(&mut self, warnings: &mut Vec<String>) -> Result<(), Vec<io::Error>> {

@@ -88,6 +88,9 @@ async fn main() {
 
     console.log("Scripting engine initialized");
 
+    engine.expose_layer();
+    console.log("Prepared scripting interface");
+
     // Create dirs (if not exist)
     dirs.create().unwrap_or_else(|e| {
         console.err(format!("Failed to create required directories: {e}"));

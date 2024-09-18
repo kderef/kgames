@@ -21,6 +21,14 @@ pub enum ScriptDir {
     Scripts,
     Examples,
 }
+impl ScriptDir {
+    pub fn path(self) -> &'static Path {
+        match self {
+            Self::Scripts => &dirs().scripts,
+            Self::Examples => &dirs().examples,
+        }
+    }
+}
 
 pub type ErrorMap = Vec<(PathBuf, anyhow::Error)>;
 
@@ -42,7 +50,11 @@ pub trait ScriptEngine {
 
     fn call_function(&mut self, script_index: usize, name: impl AsRef<str>) -> anyhow::Result<()>;
 
-    fn reload_scripts(console: &mut Console, errors: &mut ErrorMap) -> anyhow::Result<()> {
+    fn reload_scripts(
+        &mut self,
+        console: &mut Console,
+        errors: &mut ErrorMap,
+    ) -> anyhow::Result<()> {
         Ok(())
     }
 }
@@ -52,4 +64,5 @@ pub trait GameScript {
     fn name<'a>(&'a self) -> Option<&'a str>;
     fn is_example(&self) -> bool;
     fn reset(&mut self);
+    fn populate_scope(&mut self);
 }
