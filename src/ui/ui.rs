@@ -38,6 +38,7 @@ impl Default for UI {
 }
 
 impl UI {
+    pub const BORDER_W: f32 = 5.0;
     pub fn new(bg: Color, fg: Color, border: Color) -> Self {
         Self {
             bg,
@@ -64,12 +65,21 @@ impl UI {
         };
 
         draw_rectangle(bounds.x, bounds.y, bounds.w, bounds.h, color);
-        draw_rectangle_lines(bounds.x, bounds.y, bounds.w, bounds.h, 5.0, self.border);
+        draw_rectangle_lines(
+            bounds.x,
+            bounds.y,
+            bounds.w,
+            bounds.h,
+            Self::BORDER_W,
+            self.border,
+        );
 
         mouse_clk && self.active
     }
-    pub fn button_icon(&self, icon: &Texture2D, bounds: Rect) -> bool {
+    pub fn button_icon(&self, icon: &Texture2D, bounds: Rect, hover: impl AsRef<str>) -> bool {
         let clicked = self.button_impl(bounds);
+        let hov = bounds.contains(mouse_position().into());
+        let hover = hover.as_ref();
 
         let (x, y, w, h) = (
             bounds.x + 10.0,
@@ -89,10 +99,48 @@ impl UI {
             },
         );
 
+        if hov {
+            // Check for Out Of Bounds
+            let mut popup = Rect::new(bounds.x, bounds.bottom(), hover.len() as f32 * 4., 50.0);
+            let oob = screen_width() - popup.right();
+            if oob < 0.0 {
+                popup.x -= -oob;
+            }
+
+            // Draw rectangle
+            draw_rectangle(popup.x, popup.y, popup.w, popup.h, self.bg);
+            draw_rectangle_lines(
+                popup.x,
+                popup.y,
+                popup.w,
+                popup.h,
+                Self::BORDER_W,
+                self.border,
+            );
+
+            // Draw the text
+            let chunk_size = popup.w * 0.13;
+            let text_size = 15.0;
+            let mut text_y = popup.y + text_size;
+            let text_x = popup.x + 5.0;
+
+            let text: Vec<String> = hover
+                .chars()
+                .collect::<Vec<_>>() // Collect characters into a vector
+                .chunks(chunk_size as usize) // Split into chunks
+                .map(|chunk| chunk.iter().collect::<String>()) // Convert each chunk back into a String
+                .collect();
+
+            for chunk in text {
+                draw_text(&chunk, text_x, text_y, text_size, self.fg);
+                text_y += text_size;
+            }
+        }
+
         clicked
     }
 
-    pub fn button(&self, text: impl AsRef<str>, bounds: Rect, font_size: f32) -> bool {
+    pub fn button<S: AsRef<str>>(&self, text: S, bounds: Rect, font_size: f32) -> bool {
         let text = text.as_ref();
         let clicked = self.button_impl(bounds);
 

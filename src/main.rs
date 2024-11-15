@@ -22,6 +22,7 @@ use engine::engine_impl::*;
 use engine::ScriptDir;
 use engine::ScriptEngine;
 
+mod config;
 mod cross;
 mod engine;
 mod error;
@@ -140,8 +141,9 @@ async fn main() {
     let scripts_count = engine.scripts().len();
     if scripts_count == 0 {
         console.log(format!(
-            "WARNING: No scripts ending in .rhai found in {:?}!",
-            dirs.scripts
+            "WARNING: No scripts ending in {} found in {:?}!",
+            Engine::extension(),
+            dirs.scripts,
         ));
     } else {
         console.log(format!("Loaded {scripts_count} scripts!"));

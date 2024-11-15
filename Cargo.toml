@@ -7,7 +7,7 @@ repository = "https://github.com/kderef/kgames"
 
 [features]
 # default = ["rhai-engine"]
-default = ["lua-engine"]
+default = ["rhai-engine"]
 rhai-engine = ["dep:rhai"]
 lua-engine = ["dep:mlua"]
 
@@ -43,8 +43,8 @@ features = ["executor"]
 version = "0.9.9"
 optional = true
 features = [
-    "lua54",
-    "vendored"
+    "vendored",
+    "luau"
 ]
 
 [dependencies.rhai]

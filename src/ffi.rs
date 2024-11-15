@@ -238,26 +238,28 @@ pub const MOUSE_BUTTONS: [(&'static str, MouseButton); 4] = [
 ];
 
 #[cfg(feature = "rhai-engine")]
-mod script {
-    use rhai::{EvalAltResult, ImmutableString};
+mod scripting {
+    pub use rhai::{EvalAltResult, ImmutableString};
     pub type Error = Box<EvalAltResult>;
     pub type Result<T> = std::result::Result<T, Error>;
 }
 #[cfg(feature = "lua-engine")]
-mod script {
+mod scripting {
     pub type Error = mlua::Error;
     pub type Result<T> = std::result::Result<T, Error>;
 }
 
-fn external_error(e: impl ToString + Display) -> script::Error {
+use scripting::*;
+
+fn external_error(e: impl ToString + Display) -> scripting::Error {
     #[cfg(feature = "rhai-engine")]
     return Box::new(EvalAltResult::from(e.to_string()));
     #[cfg(feature = "lua-engine")]
-    return script::Error::external(anyhow::anyhow!("{e}"));
+    return scripting::Error::external(anyhow::anyhow!("{e}"));
 }
 
 /// Sync version of load_texture compatible with rhai
-pub fn load_texture_sync(path: &str) -> script::Result<&Texture2D> {
+pub fn load_texture_sync(path: &str) -> scripting::Result<&Texture2D> {
     let complete_path = dirs().assets.join(path);
 
     let path_str = complete_path
@@ -278,13 +280,13 @@ pub fn load_texture_sync(path: &str) -> script::Result<&Texture2D> {
 }
 
 /// Get stored texture (from engine)
-pub fn load_texture_stored(name: &str) -> script::Result<&Texture2D> {
+pub fn load_texture_stored(name: &str) -> scripting::Result<&Texture2D> {
     asset_store()
         .get_texture(name)
         .ok_or(external_error(format!("Texture not found: '{name}'")))
 }
 
-pub fn draw_texture_stored(name: &str, x: f32, y: f32, tint: Color) -> script::Result<()> {
+pub fn draw_texture_stored(name: &str, x: f32, y: f32, tint: Color) -> scripting::Result<()> {
     let tex = load_texture_stored(name)?;
     draw_texture(tex, x, y, tint);
     Ok(())

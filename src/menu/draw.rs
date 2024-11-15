@@ -148,19 +148,28 @@ impl<'a, E: ScriptEngine> Menu<'a, E> {
             h,
         };
 
-        if self.ui.button_icon(self.folder_icon, bounds) {
+        if self
+            .ui
+            .button_icon(self.folder_icon, bounds, "Open engine folder")
+        {
             if let Err(e) = cross::open_path(&dirs().root) {
                 self.console.err(e);
             }
         }
         bounds.x -= w + 10.0;
 
-        if self.ui.button_icon(self.refresh, bounds) {
+        if self
+            .ui
+            .button_icon(self.refresh, bounds, "Refresh and reload all the scripts")
+        {
             self.reload_scripts();
         }
         bounds.x -= w + 10.0;
 
-        if self.ui.button_icon(self.help, bounds) {
+        if self
+            .ui
+            .button_icon(self.help, bounds, "Open the README.txt file")
+        {
             if let Err(e) = cross::open_path(&self.readme) {
                 self.console.err(e);
             }
