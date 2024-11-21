@@ -1,20 +1,17 @@
-mod console;
 mod draw;
 mod games;
 mod settings;
 mod update;
 
-pub use console::Console;
-
-use crate::engine::dirs;
-use crate::engine::GameScript;
-use crate::engine::ScriptEngine;
 use crate::error::ErrorPage;
 use crate::texture::*;
 use crate::ui::rgb;
 use crate::ui::Logger;
 use crate::ui::{Dialog, UI};
-use console::*;
+pub use console::*;
+use engine::dirs;
+use engine::GameScript;
+use engine::ScriptEngine;
 use macroquad::prelude::*;
 use miniquad::window::dropped_file_bytes;
 use miniquad::window::dropped_file_count;

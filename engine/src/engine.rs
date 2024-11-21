@@ -14,7 +14,7 @@ pub const ENGINE_NAME: &str = if cfg!(feature = "rhai-engine") {
 };
 
 use super::*;
-use crate::menu::Console;
+use console::Console;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ScriptDir {

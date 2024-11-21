@@ -5,12 +5,6 @@ edition = "2021"
 build = "build.rs"
 repository = "https://github.com/kderef/kgames"
 
-[features]
-# default = ["rhai-engine"]
-default = ["rhai-engine"]
-rhai-engine = ["dep:rhai"]
-lua-engine = ["dep:mlua"]
-
 [profile.dev.package."*"]
 opt-level = 3
 
@@ -24,9 +18,9 @@ opt-level = "z" # "s"
 panic = "abort"
 
 [dependencies]
+engine = {path = "engine"}
+console = {path = "console"}
 anyhow = "1.0.86"
-cvars = "0.4.2"
-cvars-console = "0.2.0"
 fuzzy-matcher = "0.3.7"
 include_dir = "0.7.4"
 macroquad = {version = "0.4.13", features = ["audio"]}
@@ -34,28 +28,6 @@ macroquad = {version = "0.4.13", features = ["audio"]}
 msgbox = "0.7.0"
 # yakui-macroquad = "0.3.1"
 
-[dependencies.futures]
-version = "0.3.30"
-default-features = false
-features = ["executor"]
-
-[dependencies.mlua]
-version = "0.9.9"
-optional = true
-features = [
-    "vendored",
-    "luau"
-]
-
-[dependencies.rhai]
-version = "1.19.0"
-optional = true
-features = [
-  "f32_float",
-  "no_module",
-  "no_custom_syntax",
-  "no_closure",
-]
 
 [build-dependencies]
 static_vcruntime = "2.0.0"

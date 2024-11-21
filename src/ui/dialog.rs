@@ -44,7 +44,7 @@ impl<'a> Dialog<'a> {
 
         // Draw message
         let message_x = x + spacing; // Align the message with the left spacing
-        let message_y = y + font_size + 10.0; // Start drawing the message just below the title
+        let message_y = y + font_size + 15.0; // Start drawing the message just below the title
         let message_width = w - (2.0 * spacing); // Width should leave some padding on both sides
 
         draw_text(self.message, message_x, message_y, font_size, ui.fg); // You can adjust the y-coordinate or text size as needed

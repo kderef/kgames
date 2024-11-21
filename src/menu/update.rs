@@ -1,9 +1,9 @@
 use super::*;
-use crate::engine::GameScript;
-use crate::engine::ScriptDir;
-use crate::engine::ScriptEngine;
 use crate::key;
 use crate::{cross::fuzzy_search, error::ErrorPage};
+use engine::GameScript;
+use engine::ScriptDir;
+use engine::ScriptEngine;
 use macroquad::prelude::*;
 use miniquad::window::{dropped_file_bytes, dropped_file_count, dropped_file_path};
 

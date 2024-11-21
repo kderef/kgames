@@ -1,8 +1,9 @@
-use crate::engine::ScriptDir;
+use engine::ScriptDir;
 use macroquad::prelude::*;
 use std::path::PathBuf;
 
-use crate::{engine::ScriptEngine, menu::Console, ui::Logger};
+use crate::{menu::Console, ui::Logger};
+use engine::ScriptEngine;
 
 pub struct ErrorPage {
     context: String,

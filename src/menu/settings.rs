@@ -1,4 +1,4 @@
-use crate::engine::{GameScript, ScriptEngine};
+use engine::{GameScript, ScriptEngine};
 
 use super::Menu;
 

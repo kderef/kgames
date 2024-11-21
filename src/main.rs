@@ -18,13 +18,12 @@ use macroquad::prelude::*;
 use menu::Menu;
 use miniquad::conf::Platform;
 // use script::{Engine, ScriptDir};
-use engine::engine_impl::*;
 use engine::ScriptDir;
 use engine::ScriptEngine;
+use engine::*;
 
 mod config;
 mod cross;
-mod engine;
 mod error;
 mod ffi;
 mod menu;
@@ -35,7 +34,7 @@ pub mod key {
     use super::*;
     pub const REFRESH: KeyCode = KeyCode::F5;
     pub const FPS: KeyCode = KeyCode::F12;
-    pub const CONSOLE: &[KeyCode] = &[KeyCode::GraveAccent, KeyCode::Semicolon];
+    pub use console::CONSOLE_KEY as CONSOLE;
 }
 
 #[cfg(not(target_os = "macos"))]

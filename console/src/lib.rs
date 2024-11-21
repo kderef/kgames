@@ -1,19 +1,12 @@
-use super::*;
-use crate::key;
 use cvars::cvars;
 use macroquad::prelude::*;
 use std::fmt::Display;
+use std::io;
 
 const HIDE_MOUSE: bool = false;
+pub const CONSOLE_KEY: &[KeyCode] = &[KeyCode::GraveAccent, KeyCode::Semicolon];
 
 cvars! {}
-
-impl<'a, E: ScriptEngine> Menu<'a, E> {
-    pub fn console(&mut self) {
-        // NOTE: on MacOS, the key to open it is set to ';' instead of '`'
-        self.console.update(&mut self.cvars);
-    }
-}
 
 use macroquad::{
     prelude::*,
@@ -290,7 +283,7 @@ impl ConsoleInput {
 
 fn get_input() -> ConsoleInput {
     let mut input = ConsoleInput::new();
-    if are_keys_pressed(key::CONSOLE) {
+    if are_keys_pressed(CONSOLE_KEY) {
         input.console = true;
     }
     if are_keys_pressed(&[KeyCode::Escape]) {

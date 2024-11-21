@@ -4,6 +4,13 @@ use macroquad::prelude::*;
 use miniquad::window::request_quit;
 
 impl<'a, E: ScriptEngine> Menu<'a, E> {
+    pub fn console(&mut self) {
+        // NOTE: on MacOS, the key to open it is set to ';' instead of '`'
+        self.console.update(&mut self.cvars);
+    }
+}
+
+impl<'a, E: ScriptEngine> Menu<'a, E> {
     fn draw_ui(&mut self, y: f32) {
         let (screen_w, screen_h) = (screen_width(), screen_height());
 

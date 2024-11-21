@@ -1,4 +1,4 @@
-use crate::menu::Console;
+use console::Console;
 
 use super::*;
 use std::cell::LazyCell;
@@ -10,6 +10,20 @@ use std::path::Path;
 use std::path::PathBuf;
 
 pub const GLOBAL_DIR: &str = env!("CARGO_PKG_NAME");
+
+// Types
+#[cfg(feature = "rhai-engine")]
+pub mod scripting {
+    pub use rhai::{EvalAltResult, ImmutableString};
+    pub type Error = Box<EvalAltResult>;
+    pub type Result<T> = std::result::Result<T, Error>;
+}
+
+#[cfg(feature = "lua-engine")]
+mod scripting {
+    pub type Error = mlua::Error;
+    pub type Result<T> = std::result::Result<T, Error>;
+}
 
 pub struct Dirs {
     pub root: PathBuf,

@@ -1,11 +1,12 @@
+pub mod texture;
 use std::{cell::OnceCell, fmt::Display, path::PathBuf};
 
 use macroquad::prelude::*;
 
 use KeyCode::*;
 
-use crate::texture::{asset_store, asset_store_mut, AssetStore};
 use engine::dirs;
+use texture::{asset_store, asset_store_mut, AssetStore};
 
 // Macros
 /// Macro for adding getters/setters to exposed types.

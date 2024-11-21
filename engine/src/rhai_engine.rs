@@ -6,10 +6,14 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 use std::{ffi::OsStr, io};
 
-use crate::{ffi::*, reg_type, texture::asset_store};
+use texture::asset_store;
+use ffi::*;
+
+// use game_core::texture::asset_store;
+// use crate::{ffi::*, reg_type, texture::asset_store};
 use rhai::{EvalAltResult, FuncArgs, ImmutableString, Scope, AST};
 
-use crate::menu::Console;
+use console::Console;
 
 fn load_scripts_from_dir(
     eng: &mut Engine,
@@ -422,12 +426,12 @@ impl<'a> ScriptEngine for Engine<'a> {
     }
 
     fn write_examples(&mut self, warnings: &mut Vec<String>) -> Result<(), Vec<io::Error>> {
-        static EXAMPLES: Dir = include_dir!("$CARGO_MANIFEST_DIR/res/examples");
+        static EXAMPLES: Dir = include_dir!("../../res/examples");
 
         let mut errors = Vec::with_capacity(EXAMPLES.files().count());
 
         for example in EXAMPLES.files() {
-            let write_path = dirs().examples.join(example.path());
+            let write_path dirs().examples.join(example.path());
 
             if write_path.is_file() {
                 warnings.push(format!("File {write_path:?} already exists. To overwrite the example, rename or delete it."));

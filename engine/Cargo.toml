@@ -1,0 +1,35 @@
+[package]
+name = "engine"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["rhai-engine"]
+rhai-engine = ["dep:rhai"]
+lua-engine = ["dep:mlua"]
+
+
+[dependencies]
+console = {path = "../console"}
+anyhow = "1.0.86"
+macroquad = {version = "0.4.13", features = ["audio"]}
+include_dir = "0.7.4"
+msgbox = "0.7.0"
+
+[dependencies.mlua]
+version = "0.9.9"
+optional = true
+features = [
+    "vendored",
+    "luau"
+]
+
+[dependencies.rhai]
+version = "1.19.0"
+optional = true
+features = [
+  "f32_float",
+  "no_module",
+  "no_custom_syntax",
+  "no_closure",
+]
