@@ -36,12 +36,12 @@ impl<'a, E: ScriptEngine> Menu<'a, E> {
         if button("Play") {
             self.state = State::Games;
         }
-        if button("Settings") {
-            self.state = State::Settings;
-        }
-        if button("Credits") {
-            // TODO
-        }
+        // if button("Settings") {
+        //     self.state = State::Settings;
+        // }
+        // if button("Credits") {
+        //     // TODO
+        // }
 
         if button("Exit") {
             self.dialog = Some(Dialog::new(

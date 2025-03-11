@@ -69,7 +69,7 @@ pub struct Menu<'a, E: ScriptEngine> {
     readme: PathBuf,
 
     // State
-    state: State,
+    pub state: State,
     dialog: Option<Dialog<'a>>,
     key_entered: bool,
 

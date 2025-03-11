@@ -61,7 +61,11 @@ pub static mut DIRS: LazyCell<Dirs> = LazyCell::new(|| {
 });
 
 pub fn dirs() -> &'static Dirs {
-    unsafe { &DIRS }
+    // very not good trick
+    #[allow(static_mut_refs)]
+    unsafe {
+        &DIRS
+    }
 }
 
 pub fn create_readme(filename: impl AsRef<Path>) -> io::Result<PathBuf> {

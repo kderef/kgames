@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 #![cfg_attr(debug_assertions, allow(warnings))]
+#![cfg_attr(debug_assertions, allow(unused_imports))]
 
 use engine::create_readme;
 use engine::dirs;
@@ -29,6 +30,9 @@ mod ffi;
 mod menu;
 mod texture;
 mod ui;
+
+const PKG_NAME: &str = env!("CARGO_PKG_NAME");
+const PKG_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub mod key {
     use super::*;
@@ -73,11 +77,35 @@ async fn main() {
     let mut console = Console::new();
     let dirs = dirs();
 
-    console.print(format!(
-        "{name} version {version}",
-        name = env!("CARGO_PKG_NAME"),
-        version = env!("CARGO_PKG_VERSION")
-    ));
+    // Check CLI args
+    let args: Vec<_> = env::args().collect();
+    let program = &args[0];
+    let mut preselected_script = None;
+
+    let usage = format!("USAGE: {program} [--help] [--version] <script>");
+
+    match args.len() {
+        ..1 => {}
+        2 => match args[1].as_str() {
+            "--help" => {
+                console.print(usage);
+                process::exit(0);
+            }
+            "--version" => {
+                console.print(format!("{PKG_NAME} version {PKG_VERSION}"));
+                process::exit(0);
+            }
+            script => {
+                console.print(format!("starting with script '{script}'"));
+                preselected_script = Some(script);
+            }
+        },
+        too_many => {
+            eprintln!("ERROR: too many args, expected 1, got {too_many}")
+        }
+    }
+
+    console.print(format!("{PKG_NAME} version {PKG_VERSION}",));
 
     console.print(format!("Repository: {}", env!("CARGO_PKG_REPOSITORY")));
     console.print(format!("Scripting engine: {}", ENGINE_NAME));
@@ -125,6 +153,7 @@ async fn main() {
     // Try to load scripts on startup.
     let mut start_error = None;
     let mut errors = vec![];
+
     if let Err(e) = engine.load_scripts(
         &mut console,
         &mut errors,
@@ -161,8 +190,26 @@ async fn main() {
     println!();
 
     // Watch for script changes
+    let mut starting_state = menu::State::Menu;
+
+    // Preselected Script
+    if let Some(preselected) = preselected_script {
+        match engine
+            .scripts()
+            .iter()
+            .enumerate()
+            .find(|(i, s)| s.name() == Some(preselected))
+        {
+            Some((idx, _script)) => starting_state = menu::State::Playing(idx),
+            None => {
+                console.err(format!("script '{preselected}' not found."));
+            }
+        }
+    }
+
     let mut menu = Menu::new(engine, console, readme);
     menu.error = start_error;
+    menu.state = starting_state;
 
     loop {
         menu.update();

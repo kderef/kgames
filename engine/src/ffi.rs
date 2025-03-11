@@ -2,10 +2,12 @@ use std::{cell::OnceCell, fmt::Display, path::PathBuf};
 
 use macroquad::prelude::*;
 
+use crate::dirs;
 use KeyCode::*;
 
+use crate::common::scripting;
+use crate::external_error;
 use crate::texture::{asset_store, asset_store_mut, AssetStore};
-use engine::dirs;
 
 // Macros
 /// Macro for adding getters/setters to exposed types.
@@ -234,9 +236,6 @@ pub const MOUSE_BUTTONS: [(&'static str, MouseButton); 4] = [
     ("MOUSE_MIDDLE", MouseButton::Middle),
     ("MOUSE_UNKNOWN", MouseButton::Unknown),
 ];
-
-use engine::scripting;
-use engine::scripting::external_error;
 
 /// Sync version of load_texture compatible with rhai
 pub fn load_texture_sync(path: &str) -> scripting::Result<&Texture2D> {

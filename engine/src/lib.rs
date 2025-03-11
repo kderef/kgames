@@ -34,7 +34,7 @@ pub mod scripting {
 }
 
 #[cfg(feature = "lua-engine")]
-mod scripting {
+pub mod scripting {
     pub type Error = mlua::Error;
     pub type Result<T> = std::result::Result<T, Error>;
     pub use super::lua_engine::Engine;

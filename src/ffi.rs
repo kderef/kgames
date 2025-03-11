@@ -235,8 +235,8 @@ pub const MOUSE_BUTTONS: [(&'static str, MouseButton); 4] = [
     ("MOUSE_UNKNOWN", MouseButton::Unknown),
 ];
 
+use engine::external_error;
 use engine::scripting;
-use engine::scripting::external_error;
 
 /// Sync version of load_texture compatible with rhai
 pub fn load_texture_sync(path: &str) -> scripting::Result<&Texture2D> {

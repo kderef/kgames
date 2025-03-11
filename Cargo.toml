@@ -1,12 +1,15 @@
 [package]
 name = "kgames"
-version = "0.1.4"
+version = "1.0.0"
 edition = "2021"
 build = "build.rs"
 repository = "https://github.com/kderef/kgames"
 
 [profile.dev.package."*"]
 opt-level = 3
+
+[profile.dev]
+incremental = true
 
 [profile.release]
 lto = true
@@ -20,12 +23,15 @@ panic = "abort"
 [dependencies]
 engine = {path = "engine"}
 console = {path = "console"}
+config = {path = "config"}
+
 anyhow = "1.0.86"
 fuzzy-matcher = "0.3.7"
 include_dir = "0.7.4"
 macroquad = {version = "0.4.13", features = ["audio"]}
 # UI
 msgbox = "0.7.0"
+futures = "0.3.31"
 # yakui-macroquad = "0.3.1"
 
 

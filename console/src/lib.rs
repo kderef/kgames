@@ -1,7 +1,7 @@
+use colored::Colorize;
 use cvars::cvars;
 use macroquad::prelude::*;
 use std::fmt::Display;
-use std::io;
 
 const HIDE_MOUSE: bool = false;
 pub const CONSOLE_KEY: &[KeyCode] = &[KeyCode::GraveAccent, KeyCode::Semicolon];
@@ -50,16 +50,16 @@ impl Console {
     }
 
     pub fn log(&mut self, text: impl Display) {
-        self.print(format!("[INFO] {text}"));
+        self.print(format!("{} {text}", "[INFO]".green()));
     }
     pub fn note(&mut self, text: impl Display) {
-        self.print(format!("[NOTE] {text}"));
+        self.print(format!("{} {text}", "[NOTE]".blue()));
     }
     pub fn err(&mut self, text: impl Display) {
-        self.print(format!("[ERROR] {text}"));
+        self.print(format!("{} {text}", "[ERROR]".bright_red()));
     }
     pub fn warn(&mut self, text: impl Display) {
-        self.print(format!("[WARNING] {text}"));
+        self.print(format!("{} {text}", "[WARN]".bright_yellow()));
     }
 
     /// Process input, handle opening and closing, draw the console.

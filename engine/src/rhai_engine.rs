@@ -6,7 +6,6 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 use std::{ffi::OsStr, io};
 
-use texture::asset_store;
 use ffi::*;
 
 // use game_core::texture::asset_store;
@@ -377,8 +376,7 @@ impl<'a> ScriptEngine for Engine<'a> {
                 name,
                 (), // IMPORTANT: no args are passed
             )
-            .map_err(|e| anyhow::anyhow!("{e}"));
-        Ok(())
+            .map_err(|e| anyhow::anyhow!("{e}"))
     }
 
     fn scripts<'s>(&'s mut self) -> &'s mut [Self::Script] {
@@ -426,12 +424,12 @@ impl<'a> ScriptEngine for Engine<'a> {
     }
 
     fn write_examples(&mut self, warnings: &mut Vec<String>) -> Result<(), Vec<io::Error>> {
-        static EXAMPLES: Dir = include_dir!("../../res/examples");
+        static EXAMPLES: Dir = include_dir!("$CARGO_MANIFEST_DIR/../res/examples");
 
         let mut errors = Vec::with_capacity(EXAMPLES.files().count());
 
         for example in EXAMPLES.files() {
-            let write_path dirs().examples.join(example.path());
+            let write_path = dirs().examples.join(example.path());
 
             if write_path.is_file() {
                 warnings.push(format!("File {write_path:?} already exists. To overwrite the example, rename or delete it."));
